@@ -1,0 +1,12 @@
+venv/
+DB/
+build/
+dist/
+docs/
+src/__pycache__/__init__.cpython-310.pyc
+src/Doc/__pycache__/__init__.cpython-310.pyc
+src/Doc/__pycache__/create_Doc.cpython-310.pyc
+src/gui/__pycache__/
+*.dll
+src/gui/build/
+src/gui/dist/
