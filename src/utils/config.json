@@ -116,5 +116,5 @@
     "minmumMatchPresent_medium": 50,
     "minmumMatchPresent_low": 0,
     "majorFuckup": 0,
-    "multiWindow": false
+    "multiWindow": true
 } 
