@@ -54,11 +54,19 @@
         "step_prefix": "Step"
     },
     "Print_Screen_window": {
-        "PSW_width": 600,
+        "PSW_width": 1000,
         "PSW_height": 800,
         "PSW_position": {
             "PSW_x": 10,
             "PSW_y": 10
+        }
+    },
+    "template_Screen_window": {
+        "TSW_width": 900,
+        "TSW_height": 700,
+        "TSW_position": {
+            "TSW_x": 50,
+            "TSW_y": 50
         }
     },
     "Comment_Screen_window": {
@@ -91,8 +99,8 @@
     },
     "Screenshot_Dialog": {
         "title": "Screenshot Configuration",
-        "width": 400,
-        "height": 550,
+        "width": 500,
+        "height": 750,
         "position": {
             "x": 200,
             "y": 200

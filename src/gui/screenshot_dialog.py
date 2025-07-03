@@ -12,6 +12,8 @@ ScreenshotDialog
 
 import tkinter as tk
 from tkinter import ttk, StringVar, Text, messagebox
+import time
+import os
 from src.utils.config import Config
 from PIL import ImageGrab, Image, ImageTk
 from pynput import mouse
@@ -63,6 +65,10 @@ class ScreenshotDialog:
         Handle OK button click.
     _on_cancel()
         Handle Cancel button click.
+    _handle_area_selection()
+        Handle the area selection process.
+    capture_screen_region(picture_name="test_image", window_type="ps")
+        Capture a region of the screen by drag and drop.
     """
 
     def __init__(self, screenshot_counter):
@@ -90,10 +96,14 @@ class ScreenshotDialog:
         
         # Get Print Screen window configuration
         ps_config = self.config.get('Print_Screen_window', {})
-        self.default_ps_width = ps_config.get('PSW_width', 600)
+        self.default_ps_width = ps_config.get('PSW_width', 1000)
         self.default_ps_height = ps_config.get('PSW_height', 800)
         self.default_ps_x = ps_config.get('PSW_position', {}).get('PSW_x', 10)
         self.default_ps_y = ps_config.get('PSW_position', {}).get('PSW_y', 10)
+        self.default_tsw_width = ps_config.get('TSW_width', 900)
+        self.default_tsw_height = ps_config.get('TSW_height', 700)
+        self.default_tsw_x = ps_config.get('TSW_position', {}).get('TSW_x', 50)
+        self.default_tsw_y = ps_config.get('TSW_position', {}).get('TSW_y', 50)
         
         # Create the dialog window
         self.dialog = tk.Toplevel()
@@ -102,26 +112,44 @@ class ScreenshotDialog:
         self.dialog.grab_set()  # Make the dialog modal
         
         # Set window size and position from config
-        width = dialog_config.get('width', 400)
-        height = dialog_config.get('height', 500)  # Increased height for new section
+        width = dialog_config.get('width', 500)
+        height = dialog_config.get('height', 750)  # Increased height for new section
         x = dialog_config.get('position', {}).get('x', 200)
         y = dialog_config.get('position', {}).get('y', 200)
         self.dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+                # --- SCROLLABLE AREA SETUP ---
+        container = ttk.Frame(self.dialog)
+        container.pack(fill="both", expand=True)
+
+        canvas = tk.Canvas(container)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+                )
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
         
         # Make dialog modal and always on top
         self.dialog.attributes('-topmost', True)
         self.dialog.focus_force()
         self.dialog.grab_set()
-        
-        # Create main frame with padding
-        main_frame = ttk.Frame(self.dialog, padding="10")
-        main_frame.pack(fill="both", expand=True)
-        
+       
         # Priority Section
-        ttk.Label(main_frame, text="Priority:").pack(anchor="w", pady=(0, 5))
+        ttk.Label(scrollable_frame, text="Priority:").pack(anchor="w", pady=(0, 5), padx=5)
         self.priority_var = StringVar(value=self.config.get('event', {}).get('priority', 'medium'))
-        priority_frame = ttk.Frame(main_frame)
-        priority_frame.pack(fill="x", pady=(0, 10))
+        priority_frame = ttk.Frame(scrollable_frame)
+        priority_frame.pack(fill="x", pady=(0, 10), padx=5)
         
         priorities = ["low", "medium", "high"]
         for priority in priorities:
@@ -133,15 +161,15 @@ class ScreenshotDialog:
             ).pack(side="left", padx=5)
         
         # Image Name Section
-        ttk.Label(main_frame, text="Image name (for the image file name):").pack(anchor="w", pady=(0, 5))
-        self.imagName_text = Text(main_frame, height=1, width=40)
+        ttk.Label(scrollable_frame, text="Image name (for the image file name):").pack(anchor="w", pady=(0, 5), padx=5)
+        self.imagName_text = Text(scrollable_frame, height=1, width=40)
         self.imagName_text.insert("1.0", f"Pic_{self.screenshot_counter:03d}")
-        self.imagName_text.pack(fill="x", pady=(0, 10))
+        self.imagName_text.pack(fill="x", pady=(0, 10), padx=5)
         
         # Print Screen Window Section
-        ttk.Label(main_frame, text="Print Screen Window Configuration:").pack(anchor="w", pady=(0, 5))
-        ps_frame = ttk.Frame(main_frame)
-        ps_frame.pack(fill="x", pady=(0, 10))
+        ttk.Label(scrollable_frame, text="Print Screen Window Configuration:").pack(anchor="w", pady=(0, 5), padx=5)
+        ps_frame = ttk.Frame(scrollable_frame)
+        ps_frame.pack(fill="x", pady=(0, 10), padx=5)
         
         # Width
         ttk.Label(ps_frame, text="Width:").grid(row=0, column=0, padx=5, pady=2)
@@ -168,21 +196,78 @@ class ScreenshotDialog:
         button_frame.grid(row=2, column=0, columnspan=4, pady=5)
         
         # Reset button
-        ttk.Button(button_frame, text="Reset to Default", command=self._reset_ps_values).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="Reset to Default", command=lambda: self._reset_values("ps")).pack(side="left", padx=5)
         
         # Select Area button
-        self.select_area_button = ttk.Button(button_frame, text="Select Area", command=self._start_area_selection)
-        self.select_area_button.pack(side="left", padx=5)
+        #self.select_area_button = ttk.Button(button_frame, text="Select Area", command=self._start_area_selection)
+        self.select_area_button = ttk.Button(button_frame, text="Select Area", command=lambda: self._handle_area_selection("ps"))
+        self.select_area_button.pack(side="left", padx=5, pady=5)
         
-        # Add instruction label
-        self.instruction_label = ttk.Label(ps_frame, text="", foreground="blue")
-        self.instruction_label.grid(row=3, column=0, columnspan=4, pady=5)
+
+        # template Screen Window Section
+        ttk.Label(scrollable_frame, text="template Screen Window Configuration:").pack(anchor="w", pady=(0, 5), padx=5)
+        ps_frame = ttk.Frame(scrollable_frame)
+        ps_frame.pack(fill="x", pady=(0, 10), padx=5)
+        
+        # Width
+        ttk.Label(ps_frame, text="template Width:").grid(row=0, column=0, padx=5, pady=2)
+        self.tsw_width_var = StringVar(value=str(self.default_tsw_width))
+        ttk.Entry(ps_frame, textvariable=self.tsw_width_var, width=10).grid(row=0, column=1, padx=5, pady=2)
+        
+        # Height
+        ttk.Label(ps_frame, text="template Height:").grid(row=0, column=2, padx=5, pady=2)
+        self.tsw_height_var = StringVar(value=str(self.default_tsw_height))
+        ttk.Entry(ps_frame, textvariable=self.tsw_height_var, width=10).grid(row=0, column=3, padx=5, pady=2)
+        
+        # X Position
+        ttk.Label(ps_frame, text="template X Position:").grid(row=1, column=0, padx=5, pady=2)
+        self.tsw_x_var = StringVar(value=str(self.default_tsw_x))
+        ttk.Entry(ps_frame, textvariable=self.tsw_x_var, width=10).grid(row=1, column=1, padx=5, pady=2)
+        
+        # Y Position
+        ttk.Label(ps_frame, text="template Y Position:").grid(row=1, column=2, padx=5, pady=2)
+        self.tsw_y_var = StringVar(value=str(self.default_tsw_y))
+        ttk.Entry(ps_frame, textvariable=self.tsw_y_var, width=10).grid(row=1, column=3, padx=5, pady=2)
+        
+
+        # Preview Frame
+        self.preview_frame = ttk.LabelFrame(scrollable_frame, text="Preview Image", padding="5")
+        self.preview_frame.pack(fill="x", pady=(0, 10))
+
+        # Preview Labels
+        self.image_preview = ttk.Label(self.preview_frame, text="Image Preview")
+        self.image_preview.pack(side="left", padx=5)
+
+        # Preview  template Frame
+        self.preview_template_frame = ttk.LabelFrame(scrollable_frame, text="Preview Template", padding="5")
+        self.preview_template_frame.pack(fill="x", pady=(0, 10))
+
+        # Preview Labels template
+        self.template_preview = ttk.Label(self.preview_template_frame, text="Template Preview")
+        self.template_preview.pack(side="left", padx=5)
+
+
+        # Buttons frame
+        button_frame = ttk.Frame(ps_frame)
+        button_frame.grid(row=2, column=0, columnspan=4, pady=5, padx=5)
+        
+        # Reset button
+        ttk.Button(button_frame, text="Reset to Default template", command=lambda: self._reset_values("tsw")).pack(side="left", padx=5)
+        
+        # Select Area button
+        #self.select_area_button = ttk.Button(button_frame, text="Select Area", command=self._start_area_selection)
+        self.select_area_button = ttk.Button(button_frame, text="Select Area template", command=lambda: self._handle_area_selection("tsw"))
+        self.select_area_button.pack(side="left", padx=5)
+
+        # # Add instruction label
+        # self.instruction_label = ttk.Label(ps_frame, text="", foreground="blue")
+        # self.instruction_label.grid(row=3, column=0, columnspan=4, pady=5)
         
         # Step Description Section
-        ttk.Label(main_frame, text="Step Description - Enter what this step does...:").pack(anchor="w", pady=(0, 5))
+        ttk.Label(scrollable_frame, text="Step Description - Enter what this step does...:").pack(anchor="w", pady=(0, 5), padx=5)
         # Create a frame to hold the text widget and scrollbar
-        desc_frame = ttk.Frame(main_frame)
-        desc_frame.pack(fill="x", pady=(0, 10))
+        desc_frame = ttk.Frame(scrollable_frame)
+        desc_frame.pack(fill="x", pady=(0, 10), padx=5)
         
         # Create scrollbar for description
         desc_scrollbar = ttk.Scrollbar(desc_frame)
@@ -197,10 +282,10 @@ class ScreenshotDialog:
         desc_scrollbar.config(command=self.desc_text.yview)
         
         # Step Acceptance Section
-        ttk.Label(main_frame, text="Step Acceptance - Enter expected outcome...:").pack(anchor="w", pady=(0, 5))
+        ttk.Label(scrollable_frame, text="Step Acceptance - Enter expected outcome...:").pack(anchor="w", pady=(0, 5), padx=5)
         # Create a frame to hold the text widget and scrollbar
-        accep_frame = ttk.Frame(main_frame)
-        accep_frame.pack(fill="x", pady=(0, 10))
+        accep_frame = ttk.Frame(scrollable_frame)
+        accep_frame.pack(fill="x", pady=(0, 10), padx=5)
         
         # Create scrollbar for acceptance
         accep_scrollbar = ttk.Scrollbar(accep_frame)
@@ -215,10 +300,10 @@ class ScreenshotDialog:
         accep_scrollbar.config(command=self.accep_text.yview)
         
         # Button Frame
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill="x", pady=(10, 0))
+        button_frame = ttk.Frame(scrollable_frame)
+        button_frame.pack(fill="x", pady=(10, 0), padx=5)
         
-        ttk.Button(button_frame, text="OK", command=self._on_ok).pack(side="right", padx=5)
+        ttk.Button(button_frame, text="OK", command=self._on_ok).pack(side="right", padx=5 )
         ttk.Button(button_frame, text="Cancel", command=self._on_cancel).pack(side="right", padx=5)
         
         # Set focus to the dialog window itself instead of any entry
@@ -227,164 +312,183 @@ class ScreenshotDialog:
         # Prevent closing the window with the X button
         self.dialog.protocol("WM_DELETE_WINDOW", self._on_cancel)
 
-    def _create_overlay_window(self, x, y, width, height):
+    def _handle_area_selection(self, window_type):
         """
-        Create a transparent overlay window showing the selected area.
+        Handle the area selection process.
 
-        This method creates a semi-transparent window that shows the selected area
-        while keeping both the overlay and main dialog on top of other windows.
-
-        Parameters
-        ----------
-        x : int
-            X position of the rectangle.
-        y : int
-            Y position of the rectangle.
-        width : int
-            Width of the rectangle.
-        height : int
-            Height of the rectangle.
+        This function handles the area selection process and returns the selected area coordinates.
         """
-        try:
-            # Create a new toplevel window
-            self.overlay_window = tk.Toplevel()
-            self.overlay_window.attributes('-alpha', 0.3)  # Make window semi-transparent
-            self.overlay_window.attributes('-topmost', True)  # Keep window on top
-            self.overlay_window.overrideredirect(True)  # Remove window decorations
-            
-            # Set window size and position
-            self.overlay_window.geometry(f"{width}x{height}+{x}+{y}")
-            
-            # Create canvas to draw rectangle
-            canvas = tk.Canvas(self.overlay_window, width=width, height=height, 
-                             highlightthickness=0, bg='blue')
-            canvas.pack(fill='both', expand=True)
-            
-            # Draw rectangle
-            canvas.create_rectangle(0, 0, width, height, outline='red', width=2)
-            
-            # Add text showing dimensions
-            canvas.create_text(width//2, height//2, 
-                             text=f"Width: {width}\nHeight: {height}\nX: {x}\nY: {y}",
-                             fill='white', font=('Arial', 12, 'bold'))
-            
-            # Make window visible
-            self.overlay_window.deiconify()
-            
-            # Keep both windows on top
-            self.dialog.attributes('-topmost', True)
-            self.overlay_window.attributes('-topmost', True)
-            
-            # Make sure the dialog is clickable
-            self.dialog.lift()
-            self.dialog.focus_force()
-            
-        except Exception as e:
-            print(f"Error creating overlay window: {e}")
-            if self.overlay_window:
-                self.overlay_window.destroy()
-                self.overlay_window = None
-
-    def _remove_overlay_window(self):
-        """
-        Remove the overlay window if it exists.
-        """
-        if self.overlay_window:
-            self.overlay_window.destroy()
-            self.overlay_window = None
-
-    def _start_area_selection(self):
-        """
-        Start the area selection process.
-
-        This function initializes the area selection process, updates the button state and instruction label,
-        and starts the mouse listener for capturing clicks.
-        """
-        # Initialize selection state
-        self.selection_state = "waiting_first_click"
-        self.start_x = None
-        self.start_y = None
+        # Get image name from the form
+        image_name = self.imagName_text.get("1.0", "end-1c")
+        if not image_name:
+            image_name = f"Pic_{self.screenshot_counter:03d}"
         
-        # Update button state and instruction label
-        self.select_area_button.configure(style='Accent.TButton')  # Make button appear pressed
-        self.instruction_label.config(text="Click once for top-left corner (X,Y)")
+        # Call the screen capture function
+        result = self.capture_screen_region(image_name, window_type)
         
-        # Start mouse listener
-        self.mouse_listener = mouse.Listener(on_click=self._on_click)
-        self.mouse_listener.start()
+        if result:
+            x, y, width, height = result
+            if window_type == "ps":
+            # Update the form fields with the selected coordinates
+                self.ps_x_var.set(str(x))
+                self.ps_y_var.set(str(y))
+                self.ps_width_var.set(str(width))
+                self.ps_height_var.set(str(height))
+            elif window_type == "tsw":
+                self.tsw_x_var.set(str(x))
+                self.tsw_y_var.set(str(y))
+                self.tsw_width_var.set(str(width))
+                self.tsw_height_var.set(str(height))
+            
+            # Update instruction label
+            self.instruction_label.config(text=f"Selected area: {width}x{height} at ({x},{y})")
+        else:
+            # Selection was cancelled
+            self.instruction_label.config(text="Area selection cancelled")
 
-    def _on_click(self, x, y, button, pressed):
+    def capture_screen_region(self, picture_name="test_image", window_type="ps") -> tuple:
         """
-        Handle mouse click event.
+        Capture a region of the screen by drag and drop.
+        
+        Args:
+            picture_name (str): Name for the saved image file
+            window_type (str): Type of window ("ps" for print screen, "tsw" for template screen)
+            
+        Returns:
+            tuple: (x, y, width, height) coordinates of selected area
+        """
+        class ScreenCapture:
+            def __init__(self, picture_name, window_type, dialog_ref):
+                self.picture_name = picture_name
+                self.window_type = window_type
+                self.dialog_ref = dialog_ref
+                self.root = tk.Tk()
+                self.root.attributes('-fullscreen', True)
+                self.root.attributes('-alpha', 0.3)  # Semi-transparent overlay
+                self.root.configure(bg='black')
+                self.root.attributes('-topmost', True)
+                
+                # Create canvas for drawing selection rectangle
+                self.canvas = tk.Canvas(self.root, bg='black', highlightthickness=0)
+                self.canvas.pack(fill='both', expand=True)
+                
+                # Variables for drag and drop
+                self.start_x = None
+                self.start_y = None
+                self.rect = None
+                self.selection_made = False
+                
+                # Bind events
+                self.canvas.bind('<Button-1>', self.on_mouse_down)
+                self.canvas.bind('<B1-Motion>', self.on_mouse_drag)
+                self.canvas.bind('<ButtonRelease-1>', self.on_mouse_up)
+                self.canvas.bind('<Escape>', self.cancel_capture)
+                
+                # Instructions
+                self.canvas.create_text(
+                    self.root.winfo_screenwidth() // 2, 
+                    50, 
+                    text="Drag to select a region. Press ESC to cancel.", 
+                    fill='white', 
+                    font=('Arial', 16, 'bold')
+                )
+                
+            def on_mouse_down(self, event):
+                self.start_x = event.x
+                self.start_y = event.y
+                if self.rect:
+                    self.canvas.delete(self.rect)
+                self.rect = self.canvas.create_rectangle(
+                    self.start_x, self.start_y, self.start_x, self.start_y,
+                    outline='red', width=2
+                )
+                
+            def on_mouse_drag(self, event):
+                if self.rect:
+                    self.canvas.coords(self.rect, self.start_x, self.start_y, event.x, event.y)
+                    
+            def on_mouse_up(self, event):
+                if self.start_x is not None and self.start_y is not None:
+                    x1, y1 = min(self.start_x, event.x), min(self.start_y, event.y)
+                    x2, y2 = max(self.start_x, event.x), max(self.start_y, event.y)
+                    
+                    # Ensure minimum size
+                    if abs(x2 - x1) > 10 and abs(y2 - y1) > 10:
+                        self.selection_coords = (x1, y1, x2, y2)
+                        self.selection_made = True
+                        self.root.quit()
+                    else:
+                        # Selection too small, clear it
+                        if self.rect:
+                            self.canvas.delete(self.rect)
+                            self.rect = None
+                            
+            def cancel_capture(self, event=None):
+                self.selection_made = False
+                self.root.quit()
+                
+            def capture(self):
+                self.root.mainloop()
+                self.root.destroy()
+                
+                if not self.selection_made:
+                    return None
+                    
+                # Wait a moment for the window to close
+                time.sleep(0.1)
+                
+                # Capture the screen
+                screenshot = ImageGrab.grab()
+                
+                # Crop to selected region
+                x1, y1, x2, y2 = self.selection_coords
+                cropped = screenshot.crop((x1, y1, x2, y2))
+                
+                # Resize for preview (max 200x200 pixels)
+                preview_size = (200, 200)
+                cropped.thumbnail(preview_size, Image.Resampling.LANCZOS)
+                
+                # Convert to PhotoImage for tkinter
+                photo = ImageTk.PhotoImage(cropped)
+                
+                # Update the appropriate preview label
+                if self.window_type == "tsw":
+                    self.dialog_ref.template_preview.config(image=photo, text="")
+                    self.dialog_ref.template_preview.image = photo  # Keep a reference
+                else:  # ps
+                    self.dialog_ref.image_preview.config(image=photo, text="")
+                    self.dialog_ref.image_preview.image = photo  # Keep a reference
+                
+                # Return coordinates (x, y, width, height)
+                return (x1, y1, x2 - x1, y2 - y1)
+        
+        # Create and run the screen capture
+        capture_tool = ScreenCapture(picture_name, window_type, self)
+        return capture_tool.capture()
 
-        Parameters
-        ----------
-        x : int
-            The x-coordinate of the mouse click.
-        y : int
-            The y-coordinate of the mouse click.
-        button : Button
-            The mouse button that was clicked.
-        pressed : bool
-            Whether the button was pressed or released.
+    def _reset_values(self, window_type):
         """
-        if not pressed:  # Only handle button release
-            return
-            
-        if self.selection_state == "waiting_first_click":
-            # First click - set X,Y position
-            self.start_x = x
-            self.start_y = y
-            
-            # Update X,Y position fields
-            self.ps_x_var.set(str(self.start_x))
-            self.ps_y_var.set(str(self.start_y))
-            
-            # Update instruction label and button state
-            self.instruction_label.config(text="Now click for bottom-right corner to set Width and Height")
-            self.select_area_button.configure(style='Accent.TButton')  # Keep button pressed
-            
-            self.selection_state = "waiting_second_click"
-            
-        elif self.selection_state == "waiting_second_click":
-            # Second click - set width and height
-            end_x = x
-            end_y = y
-            
-            # Calculate width and height
-            width = abs(end_x - self.start_x)
-            height = abs(end_y - self.start_y)
-            
-            # Update width and height fields
-            self.ps_width_var.set(str(width))
-            self.ps_height_var.set(str(height))
-            
-            # Create overlay window
-            self._create_overlay_window(self.start_x, self.start_y, width, height)
-            
-            # Clear instruction label and reset button state
-            self.instruction_label.config(text="")
-            self.select_area_button.configure(style='TButton')  # Return button to normal state
-            
-            # Stop mouse listener and reset state
-            if self.mouse_listener:
-                self.mouse_listener.stop()
-                self.mouse_listener = None
-            self.selection_state = "waiting_first_click"
-            self.start_x = None
-            self.start_y = None
+        Reset Print Screen (_ps_) or Template Screen (_tsw_) window values to defaults.
 
-    def _reset_ps_values(self):
+        This function resets the Print Screen or Template Screen window values to their default values.
         """
-        Reset Print Screen window values to defaults.
+        if window_type == "ps":
+            self.ps_width_var.set(str(self.default_ps_width))
+            self.ps_height_var.set(str(self.default_ps_height))
+            self.ps_x_var.set(str(self.default_ps_x))
+            self.ps_y_var.set(str(self.default_ps_y))
+            self.image_preview.config(image=None, text="")
+            if hasattr(self.image_preview, 'image'):
+                self.image_preview.image = None  # Remove reference to the image
+        elif window_type == "tsw":
+            self.tsw_width_var.set(str(self.default_tsw_width))
+            self.tsw_height_var.set(str(self.default_tsw_height))
+            self.tsw_x_var.set(str(self.default_tsw_x))
+            self.tsw_y_var.set(str(self.default_tsw_y))
+            self.template_preview.config(image=None, text="")
+            if hasattr(self.template_preview, 'image'):
+                self.template_preview.image = None  # Remove reference to the template image
 
-        This function resets the Print Screen window values to their default values and removes the overlay window.
-        """
-        self.ps_width_var.set(str(self.default_ps_width))
-        self.ps_height_var.set(str(self.default_ps_height))
-        self.ps_x_var.set(str(self.default_ps_x))
-        self.ps_y_var.set(str(self.default_ps_y))
-        self._remove_overlay_window()  # Remove overlay when resetting
             
     def _on_ok(self):
         """
@@ -423,6 +527,10 @@ class ScreenshotDialog:
             ps_height = int(self.ps_height_var.get())
             ps_x = int(self.ps_x_var.get())
             ps_y = int(self.ps_y_var.get())
+            tsw_width = int(self.tsw_width_var.get())
+            tsw_height = int(self.tsw_height_var.get())
+            tsw_x = int(self.tsw_x_var.get())
+            tsw_y = int(self.tsw_y_var.get())
         except ValueError:
             messagebox.showerror("Invalid Input", "Please enter valid numbers for Print Screen window dimensions and position.")
             return
@@ -435,16 +543,17 @@ class ScreenshotDialog:
             'ps_width': ps_width,
             'ps_height': ps_height,
             'ps_x': ps_x,
-            'ps_y': ps_y
+            'ps_y': ps_y,
+            'tsw_width': tsw_width,
+            'tsw_height': tsw_height,
+            'tsw_x': tsw_x,
+            'tsw_y': tsw_y
         }
         print("\nDialog data being saved:")
         print(f"Priority: {self.result['priority']}")
         print(f"Description: {self.result['step_desc']}")
         print(f"Acceptance: {self.result['step_accep']}")
         print(f"Print Screen Window: {ps_width}x{ps_height} at ({ps_x},{ps_y})")
-        
-        # Remove overlay window
-        self._remove_overlay_window()
         
         # Release grab and destroy window
         self.dialog.grab_release()
@@ -458,8 +567,7 @@ class ScreenshotDialog:
         """
         print("\nDialog cancelled")
         self.result = None
-        # Remove overlay window
-        self._remove_overlay_window()
+    
         # Release grab and destroy window
         self.dialog.grab_release()
         self.dialog.destroy() 
