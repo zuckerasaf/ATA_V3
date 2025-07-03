@@ -16,7 +16,11 @@ def restart_control_panel():
     try:
         if ControlPanel._instance is not None:
             try:
-                ControlPanel.bring_to_front_and_refresh()
+                # Try to bring to front, if it returns False, create a new instance
+                if not ControlPanel.bring_to_front_and_refresh():
+                    root = tk.Tk()
+                    app = ControlPanel(root)
+                    root.mainloop()
             except Exception as e:
                 print(f"Error bringing control panel to front: {e}")
                 # If bringing to front fails, create a new instance

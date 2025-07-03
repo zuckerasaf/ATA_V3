@@ -14,8 +14,10 @@ class Event:
                  action: str, neto_time: int = 0, priority: str = PRIORITY_MEDIUM, step_on: str = "",
                  time_from_last: int = 0, time_in_screenshot_dialog: int = 0, step_desc: str = "none", 
                  step_accep: str = "none", step_resau: str = "none", step_resau_num: int = 0,
-                 pic_path: str = "none", screenshot_counter: int = 0, image_name: str = "none",
-                 pic_width: int = 0, pic_height: int = 0, pic_x: int = 0, pic_y: int = 0):
+                 pic_path: str = "noPic", screenshot_counter: int = 0, image_name: str = "noPic",
+                 pic_width: int = 0, pic_height: int = 0, pic_x: int = 0, pic_y: int = 0,
+                 pic_template_path: str = "noTemplatePic", pic_template_name: str = "noTemplatePic",
+                 pic_template_width: int = 1, pic_template_height: int = 1, pic_template_x: int = 1, pic_template_y: int = 1):
         """
         Initialize a new Event instance.
         
@@ -42,6 +44,10 @@ class Event:
             pic_height (int): Height of the picture in pixels
             pic_x (int): X coordinate of the picture
             pic_y (int): Y coordinate of the picture
+            pic_template_width (int): Width of the template picture in pixels
+            pic_template_height (int): Height of the template picture in pixels
+            pic_template_x (int): X coordinate of the template picture
+            pic_template_y (int): Y coordinate of the template picture
         """
         self.counter = counter
         self.time = time
@@ -64,6 +70,12 @@ class Event:
         self.pic_height = pic_height
         self.pic_x = pic_x
         self.pic_y = pic_y
+        self.pic_template_path = pic_template_path
+        self.pic_template_name = pic_template_name
+        self.pic_template_width = pic_template_width
+        self.pic_template_height = pic_template_height
+        self.pic_template_x = pic_template_x
+        self.pic_template_y = pic_template_y
         self.screenshot = None  # Store the screenshot image
 
 
@@ -77,7 +89,10 @@ class Event:
                f"step_resau='{self.step_resau}', pic_path='{self.pic_path}', " \
                f"screenshot_counter={self.screenshot_counter}, image_name='{self.image_name}', " \
                f"pic_width={self.pic_width}, pic_height={self.pic_height}, " \
-               f"pic_x={self.pic_x}, pic_y={self.pic_y})"
+               f"pic_x={self.pic_x}, pic_y={self.pic_y}, pic_template_path='{self.pic_template_path}', " \
+               f"pic_template_name='{self.pic_template_name}', pic_template_width={self.pic_template_width}, " \
+               f"pic_template_height={self.pic_template_height}, pic_template_x={self.pic_template_x}, " \
+               f"pic_template_y={self.pic_template_y})"
     
     def __repr__(self) -> str:
         """Detailed string representation of the Event."""
@@ -106,7 +121,13 @@ class Event:
             'pic_width': self.pic_width,
             'pic_height': self.pic_height,
             'pic_x': self.pic_x,
-            'pic_y': self.pic_y
+            'pic_y': self.pic_y,
+            'pic_template_path': self.pic_template_path,
+            'pic_template_name': self.pic_template_name,
+            'pic_template_width': self.pic_template_width,
+            'pic_template_height': self.pic_template_height,
+            'pic_template_x': self.pic_template_x,
+            'pic_template_y': self.pic_template_y
         }
     
     @classmethod
@@ -133,5 +154,11 @@ class Event:
             pic_width=data.get('pic_width', 0),
             pic_height=data.get('pic_height', 0),
             pic_x=data.get('pic_x', 0),
-            pic_y=data.get('pic_y', 0)
+            pic_y=data.get('pic_y', 0),
+            pic_template_path=data.get('pic_template_path', 'none'),
+            pic_template_name=data.get('pic_template_name', 'none'),
+            pic_template_width=data.get('pic_template_width', 0),
+            pic_template_height=data.get('pic_template_height', 0),
+            pic_template_x=data.get('pic_template_x', 0),
+            pic_template_y=data.get('pic_template_y', 0)
         )

@@ -203,12 +203,12 @@ def cleanup_and_restart(event_window, lock_file="cursor_listener.lock"):
                 # Destroy the event window
                 if event_window.winfo_exists():
                     event_window.destroy()
-                # # Add a small delay to ensure window is destroyed
-                # event_window.after(200, restart_control_panel)
+                # Add a small delay to ensure window is destroyed
+                event_window.after(200, restart_control_panel)
             except Exception as e:
                 print(f"Error during cleanup: {e}")
-                # # Try to restart control panel even if window destruction fails
-                # restart_control_panel()
+                # Try to restart control panel even if window destruction fails
+                restart_control_panel()
         
         # Schedule the cleanup in the main thread
         event_window.after(0, delayed_cleanup)
