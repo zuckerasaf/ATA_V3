@@ -342,6 +342,11 @@ class EventListener:
                     event.pic_height = dialog.result['ps_height']
                     event.pic_x = dialog.result['ps_x']
                     event.pic_y = dialog.result['ps_y']
+                    event.pic_template_width = dialog.result['ps_width']
+                    event.pic_template_height = dialog.result['ps_height']
+                    event.pic_template_x = dialog.result['ps_x']
+                    event.pic_template_y = dialog.result['ps_y']
+
 
                     if dialog.result:
                         #Add a small delay to allow the window to update
@@ -362,11 +367,13 @@ class EventListener:
                                 event.step_accep = dialog.result['step_accep']
                                 event.priority = dialog.result['priority']
                                 event.pic_path =  save_screenshot(screenshot, screenshot_path)
+                                event.pic_template_path =  save_screenshot(screenshot, screenshot_path)
                                 event.time_in_screenshot_dialog = time_in_dialog  # Store the time spent in dialog
                                 self.current_test.numOfSteps += 1
                                 self.current_test.stepResult.append([dialog.result['image_name'], "-"])
                                 event.screenshot_counter = self.screenshot_counter
                                 event.image_name = dialog.result['image_name']
+                                event.pic_template_name = dialog.result['image_name']
                                 self.current_test.total_time_in_screenshot_dialog += time_in_dialog
 
                                 

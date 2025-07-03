@@ -316,10 +316,17 @@ class ControlPanel:
         Args:
             message (str): The message to display in the status bar
         """
-        self.status_text.config(state="normal")  # Enable editing temporarily
-        self.status_text.delete("1.0", tk.END)
-        self.status_text.insert("1.0", message)
-        self.status_text.config(state="normal")  # Keep it editable for selection
+        try:
+            # Check if the window and status_text still exist
+            if hasattr(self, 'status_text') and self.status_text.winfo_exists():
+                self.status_text.config(state="normal")  # Enable editing temporarily
+                self.status_text.delete("1.0", tk.END)
+                self.status_text.insert("1.0", message)
+                self.status_text.config(state="normal")  # Keep it editable for selection
+        except Exception as e:
+            print(f"Error setting status: {e}")
+            # If we can't update the status text, just print the message
+            print(f"Status: {message}")
 
     def _populate_list(self, listbox, directory_path, file_pattern, state):
         """
@@ -523,34 +530,25 @@ class ControlPanel:
 
             try:
                 go_to_starting_point(starting_point)
-                # Now close the Control Panel window
-                self.root.destroy()
-                #run_log.clear()
                 # Start recording with the specified test name and starting point
+                # The start_recording function will handle its own window management
+                # and will call cleanup_and_restart when done, which will restart the control panel
                 start_recording(test_name, starting_point, precondition)
             except Exception as e:
                 print(f"Error during recording: {e}")
-                raise e
-            finally:
-                # show the control panel window again in case of multiWindow is false
+                # Show the control panel window in case of error
                 if self.config.get("multiWindow") == False:
                     self.root.deiconify()
-            
-            # # Refresh test list after recording
-            # self.refresh_test_list()
-
-            try:
-                root = tk.Tk()
-                app = ControlPanel(root)
-                root.mainloop()
-            except Exception as e:
-                print(f"Fatal error creating control panel: {e}")
+                self.set_status(f"Error during recording: {str(e)}")
+                messagebox.showerror("Recording Error", str(e))
+                return
             
         except Exception as e:
             self.set_status(f"Error during recording: {str(e)}")
             messagebox.showerror("Recording Error", str(e))
             # Show the control panel window in case of error
-            self.root.deiconify()
+            if self.config.get("multiWindow") == False:
+                self.root.deiconify()
             
     def run_test(self):
         """
@@ -857,14 +855,24 @@ class ControlPanel:
         """
         if cls._instance is not None:
             try:
-                cls._instance.root.deiconify()
-                cls._instance.root.lift()
-                cls._instance.root.focus_force()
-                cls._instance.refresh_test_list()
-                cls._instance.refresh_result_list()
-                cls._instance.refresh_run_log_status()
+                # Check if the root window still exists
+                if hasattr(cls._instance, 'root') and cls._instance.root.winfo_exists():
+                    cls._instance.root.deiconify()
+                    cls._instance.root.lift()
+                    cls._instance.root.focus_force()
+                    cls._instance.refresh_test_list()
+                    cls._instance.refresh_result_list()
+                    cls._instance.refresh_run_log_status()
+                else:
+                    # Window was destroyed, clear the instance and create a new one
+                    cls._instance = None
+                    return False
             except Exception as e:
                 print(f"Error bringing ControlPanel to front: {e}")
+                # Clear the instance if there was an error
+                cls._instance = None
+                return False
+        return True
     
     def open_image(self):
         """
