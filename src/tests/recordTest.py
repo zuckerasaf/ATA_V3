@@ -15,7 +15,7 @@ Functions
 main(test_name=None, starting_point="none")
     Main function to start the test recording process.
 """
-
+import cv2
 import os
 import sys
 import time
@@ -27,7 +27,7 @@ from datetime import datetime
 from pynput import mouse, keyboard
 from src.utils.config import Config
 from src.utils.test import Test
-from src.utils.picture_handle import capture_screen, generate_screenshot_filename, save_screenshot
+from src.utils.picture_handle import capture_screen, generate_screenshot_filename, save_screenshot, find_image
 from src.utils.event_mouse_keyboard import Event
 from src.utils.process_utils import is_already_running, register_cleanup, cleanup_and_restart, save_test, close_existing_mouse_threads
 from src.utils.app_lifecycle import restart_control_panel
@@ -360,6 +360,8 @@ class EventListener:
                                 self.test_name, self.screenshot_counter, dialog.result['image_name'],"Recording","none")
                             template_filename, template_path = generate_screenshot_filename(
                                 self.test_name, self.screenshot_counter, dialog.result['image_name']+"_Template","Recording","none")
+                            result_filename, result_path = generate_screenshot_filename(
+                                self.test_name, self.screenshot_counter, dialog.result['image_name']+"_Result","Recording","none")
                             
                             if screenshot_filename and screenshot_path:
                                 self.save = True # Resume saving events
@@ -371,6 +373,11 @@ class EventListener:
                                 event.priority = dialog.result['priority']
                                 event.pic_path =  save_screenshot(screenshot, screenshot_path)
                                 event.pic_template_path =  save_screenshot(templateshot, template_path)
+
+                                succsess, result_image, all_high_res_results, best_high_res_confidence, best_high_res_location= find_image(template_path, screenshot_path)
+                                cv2.imwrite(result_path, result_image)
+                                #result_image_path = save_screenshot(result_image, result_path)
+
                                 event.time_in_screenshot_dialog = time_in_dialog  # Store the time spent in dialog
                                 self.current_test.numOfSteps += 1
                                 self.current_test.stepResult.append([dialog.result['image_name'], "-"])

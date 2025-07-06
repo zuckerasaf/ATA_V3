@@ -410,3 +410,489 @@ def save_screenshot(screenshot, filepath: str) -> None:
     if screenshot:
         screenshot.save(filepath, 'JPEG')
         return filepath  # Update the pic_path field with the saved file path
+    
+def find_image(template_path, image_path, threshold=0.8, method=cv2.TM_CCOEFF_NORMED, rotation_start=0, rotation_end=0, rotation_step=0):
+    """
+    Find a template image within a larger image.
+    
+    Args:
+        template_path (str): Path to the template image
+        image_path (str): Path to the larger image
+        threshold (float): Matching threshold (0-1)
+        method: OpenCV template matching method
+    
+    Returns:
+        tuple: (success, result_image, matches, confidences, locations)
+    """
+
+    try:
+    # Read the images
+        template = cv2.imread(template_path)
+        image = cv2.imread(image_path)
+
+        points, confidences_lowR, best_angle_lowR, best_confidence_lowR, results_low_res = find_image_multiscale(image, template, threshold, method, rotation_start, rotation_end, rotation_step)
+
+        # cv2.imshow("template_low_res", template_low_res)
+        # cv2.imshow("image_low_res", image_low_res)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        if template is None or image is None:
+            print("Error: Could not read one or both images")
+            return False, None, [], [], []
+        
+        # If no points found from low-res search, return failure
+        if not points:
+            print("No matches found in low-resolution search")
+            return False, None, [], [], []
+        
+        h, w = template.shape[:2]
+        
+        # Convert low-res points to high-res coordinates (multiply by 2)
+        high_res_points = [(x * 2, y * 2) for (x, y) in points]
+        
+        # Rotate template for the best angle found
+        rotated_template = rotate_image(template, best_angle_lowR)
+        rotated_h, rotated_w = rotated_template.shape[:2]
+        
+        # Define search region size (template size + some margin)
+        margin = 20  # pixels margin around the low-res point
+        search_h = rotated_h + 2 * margin
+        search_w = rotated_w + 2 * margin
+        
+        best_high_res_confidence = -1
+        best_high_res_location = None
+        all_high_res_results = []
+        
+        print(f"Running high-resolution search on {len(high_res_points)} regions...")
+        
+        print(f"Points: {points}")
+        points_cleaned = remove_duplicate_points(points)
+        print(f"Points cleaned: {points_cleaned}")
+        # For each low-res point, search in the corresponding high-res region
+        for i, (low_x, low_y) in enumerate(points_cleaned):
+            
+            # Convert to high-res coordinates
+            high_x, high_y = low_x * 2, low_y * 2
+            
+            # Define search region bounds
+            start_x = max(0, high_x - margin)
+            start_y = max(0, high_y - margin)
+            end_x = min(image.shape[1] - rotated_w, high_x + margin)
+            end_y = min(image.shape[0] - rotated_h, high_y + margin)
+            
+            # Extract the search region
+            search_region = image[start_y:end_y + rotated_h, start_x:end_x + rotated_w]
+            
+            if search_region.size == 0:
+                print(f"Warning: Empty search region for point {i}")
+                continue
+            
+            angles = np.arange(best_angle_lowR-10, best_angle_lowR+10, 1)
+            for angle in angles:
+               
+                # print(f"Processing angle in high-res: {angle} region {i}")
+                # Run template matching on this specific region
+                rotated_template = rotate_image(template, angle)
+                result = cv2.matchTemplate(search_region, rotated_template, method)
+                
+                # Find best match in this region
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+                
+                # For SQDIFF, use minimum value; for others, use maximum
+                if method == cv2.TM_SQDIFF_NORMED:
+                    confidence = 1.0 - min_val  # Convert to similarity score
+                    loc = min_loc
+                else:
+                    confidence = max_val
+                    loc = max_loc
+                
+                # Convert local coordinates to global image coordinates
+                global_x = start_x + loc[0]
+                global_y = start_y + loc[1]
+                
+                all_high_res_results.append({
+                    'confidence': confidence,
+                    'location': (global_x, global_y),
+                    'angle': angle,
+                    'region_index': i
+                })
+                
+                # Update best result if this region gives better confidence
+                if confidence > best_high_res_confidence:
+                    best_high_res_confidence = confidence
+                    best_high_res_location = (global_x, global_y)
+                    best_high_res_angle = angle
+        
+        # Sort results by confidence
+        all_high_res_results.sort(key=lambda x: x['confidence'], reverse=True)
+        
+        # # Extract top results for return
+        # top_confidences = [result['confidence'] for result in all_high_res_results[:10]]
+        # top_locations = [result['location'] for result in all_high_res_results[:10]]
+        
+        print(f"Best high-res confidence: {best_high_res_confidence:.4f}")
+        print(f"Best high-res location: {best_high_res_location}")
+        print(f"Best high-res angle: {best_high_res_angle}")
+        
+        # Create result image with the best match
+        result_image = create_result_image(image, best_high_res_confidence, threshold, method, best_high_res_location, best_high_res_angle, rotated_w, rotated_h)
+
+        return True, result_image, [len(all_high_res_results)], [best_high_res_confidence], [best_high_res_location]
+
+    except Exception as e:
+        print(f"Error during image processing: {str(e)}")
+        return False, None, [], [], []
+
+def create_result_image(image, best_confidence, threshold, method, locations, best_angle=0, w=0, h=0):
+    """
+    Create a result image with the template image and the result image.
+    """
+    # Create a copy of the image for drawing
+    result_image = image.copy()
+        
+    #if the result is greater than the threshold, the color is green, otherwise red
+    if best_confidence >= threshold:
+        RGB = (0, 0, 0)
+    else:
+        RGB = (0, 0, 255)
+
+    # Draw rectangle only at the highest confidence location
+    if locations:  # Check if any matches were found
+        #best_location = locations[0]  # First location has highest confidence
+        cv2.rectangle(result_image, locations, 
+                     (locations[0] + w, locations[1] + h), RGB, 2)
+            
+        # Add information to image (fixed positioning and method name)
+        method_name = "TM_CCOEFF_NORMED" if method == cv2.TM_CCOEFF_NORMED else \
+                     "TM_CCORR_NORMED" if method == cv2.TM_CCORR_NORMED else \
+                     "TM_SQDIFF_NORMED" if method == cv2.TM_SQDIFF_NORMED else "Unknown"
+        
+        draw_text_with_background(result_image, f"Method: {method_name}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
+        draw_text_with_background(result_image, f"Threshold: {threshold:.2f}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
+        draw_text_with_background(result_image, f"Best angle: {best_angle:.1f} deg", (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
+        draw_text_with_background(result_image, f"Confidence: {best_confidence:.4f}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
+    else:
+        draw_text_with_background(result_image, "No matches found", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+    
+    return result_image
+
+def draw_text_with_background(img, text, org, font, font_scale, color, thickness, bg_color=(0,0,0), alpha=0.5):
+    # Get the text size
+    (text_w, text_h), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+    x, y = org
+    # Rectangle coordinates
+    rect_x1, rect_y1 = x, y - text_h - baseline
+    rect_x2, rect_y2 = x + text_w, y + baseline
+
+    # Make a copy of the ROI
+    overlay = img.copy()
+    cv2.rectangle(overlay, (rect_x1, rect_y1), (rect_x2, rect_y2), bg_color, -1)
+    # Blend the rectangle with the image
+    cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+    # Draw the text
+    cv2.putText(img, text, org, font, font_scale, color, thickness, cv2.LINE_AA)
+
+def rotate_image(image, angle):
+    """
+    Rotate an image by a given angle.
+    
+    Args:
+        image: Input image
+        angle: Rotation angle in degrees (positive = counterclockwise)
+    
+    Returns:
+        Rotated image
+    """
+    # Get image dimensions
+    height, width = image.shape[:2]
+    center = (width // 2, height // 2)
+    
+    # Get rotation matrix
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+    
+    # Perform rotation
+    rotated = cv2.warpAffine(image, rotation_matrix, (width, height), 
+                            flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, 
+                            borderValue=(255, 255, 255))
+    
+    return rotated
+
+def test_template_rotations(template_path, image_path, threshold=0.8, method=cv2.TM_CCOEFF_NORMED,
+                          start_angle=-30, end_angle=30, step=1.0):
+    """
+    Test template matching with different rotations and return results.
+    
+    Args:
+        template_path (str): Path to the template image
+        image_path (str): Path to the larger image
+        threshold (float): Matching threshold (0-1)
+        method: OpenCV template matching method
+        start_angle (float): Starting rotation angle in degrees
+        end_angle (float): Ending rotation angle in degrees
+        step (float): Rotation step in degrees
+    
+    Returns:
+        list: List of tuples (angle, best_confidence, num_matches, best_location)
+    """
+    try:
+        # Read the images
+        template = cv2.imread(template_path)
+        image = cv2.imread(image_path)
+        
+        if template is None or image is None:
+            print("Error: Could not read one or both images")
+            return []
+        
+        results = []
+        angles = np.arange(start_angle, end_angle + step, step)
+        
+        for angle in angles:
+            # Rotate template
+            rotated_template = rotate_image(template, angle)
+            
+            # Perform template matching
+            result = cv2.matchTemplate(image, rotated_template, method)
+            
+            # Find best match for this angle
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            
+            # For SQDIFF, use minimum value; for others, use maximum
+            if method == cv2.TM_SQDIFF_NORMED:
+                confidence = 1.0 - min_val  # Convert to similarity score
+                best_loc = min_loc
+                locations = np.where(result <= (1.0 - threshold))
+            else:
+                confidence = max_val
+                best_loc = max_loc
+                locations = np.where(result >= threshold)
+            
+            num_matches = len(locations[0])
+            
+            results.append((angle, confidence, num_matches, best_loc))
+        
+        return results
+        
+    except Exception as e:
+        print(f"Error during rotation testing: {str(e)}")
+        return []
+
+def create_rotation_result_image(image_path, template_path, rotation_results, method):
+    """
+    Create a result image with squares drawn based on rotation test results.
+    
+    Args:
+        image_path (str): Path to the main image
+        template_path (str): Path to the template image
+        rotation_results (list): List of tuples (angle, best_confidence, num_matches, best_location)
+        method: OpenCV template matching method
+    
+    Returns:
+        result_image: Result image with squares drawn
+    """
+    try:
+        # Read the images
+        image = cv2.imread(image_path)
+        template = cv2.imread(template_path)
+        
+        if image is None or template is None:
+            print("Error: Could not read one or both images")
+            return None
+        
+        # Get template dimensions
+        template_h, template_w = template.shape[:2]
+        
+        # Create result image
+        result_image = image.copy()
+        
+        # Find the best result to highlight
+        best_result = max(rotation_results, key=lambda x: x[1])
+        best_angle, best_conf, best_matches, best_loc = best_result
+        
+        # Draw squares for all results with different colors based on confidence
+        for angle, confidence, num_matches, location in rotation_results:
+            if location is None:
+                continue
+                
+            # Color based on confidence (green for high confidence, red for low)
+            if confidence > 0.8:
+                color = (0, 255, 0)  # Green
+            elif confidence > 0.6:
+                color = (0, 255, 255)  # Yellow
+            else:
+                color = (0, 0, 255)  # Red
+            
+            # Make the best match thicker
+            thickness = 3 if (angle, confidence, num_matches, location) == best_result else 1
+            
+            # Draw rectangle around the match
+            cv2.rectangle(result_image, location, 
+                         (location[0] + template_w, location[1] + template_h), 
+                         color, thickness)
+            
+            # Add angle and confidence text
+            text = f"{angle:.1f}° ({confidence:.3f})"
+            cv2.putText(result_image, text, 
+                       (location[0], location[1] - 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+        
+        # Add summary information
+        cv2.putText(result_image, f"Best angle: {best_angle:.1f}°", 
+                   (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+        cv2.putText(result_image, f"Best confidence: {best_conf:.4f}", 
+                   (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+        cv2.putText(result_image, f"Total angles tested: {len(rotation_results)}", 
+                   (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+        
+        return result_image
+        
+    except Exception as e:
+        print(f"Error during result image creation: {str(e)}")
+        return None
+
+def remove_duplicate_points(points, distance_threshold=2):
+    """
+    Remove duplicate points that are within a certain distance of each other.
+    
+    Args:
+        points (list): List of (x, y) coordinate tuples
+        distance_threshold (int): Minimum distance between points to consider them different
+    
+    Returns:
+        list: Filtered list of points with duplicates removed
+    """
+    if not points:
+        return []
+    
+    filtered_points = [points[0]]  # Keep the first point
+    
+    for point in points[1:]:
+        is_duplicate = False
+        
+        # Check distance to all existing filtered points
+        for existing_point in filtered_points:
+            distance = ((point[0] - existing_point[0])**2 + (point[1] - existing_point[1])**2)**0.5
+            if distance <= distance_threshold:
+                is_duplicate = True
+                break
+        
+        # Add point only if it's not a duplicate
+        if not is_duplicate:
+            filtered_points.append(point)
+    
+    return filtered_points
+
+def find_image_multiscale(image, template, threshold, method, rotation_start=0, rotation_end=0, rotation_step=0):
+    """
+    Multi-scale template matching with rotation testing: first on low-res, then refine on high-res.
+    Displays the 10 highest correlation points on the low-res image for the best rotation.
+    Uses step * 20 for rotation testing to speed up the process.
+    """
+
+    template_low_res = cv2.resize(template, (0,0), fx=0.5, fy=0.5)
+    image_low_res = cv2.resize(image, (0,0), fx=0.5, fy=0.5)
+    # Check if rotation testing is enabled
+    if rotation_start == 0 and rotation_end == 0 and rotation_step == 0:
+        # No rotation testing - just do regular multiscale matching
+
+        th, tw = template_low_res.shape[:2]
+
+       
+    # Use 5x larger step for rotation testing
+    rotation_range = rotation_end - rotation_start
+    if rotation_range < 20:
+        rotation_step = 1
+    else:
+        rotation_step = int(rotation_range / 20)
+    angles = np.arange(rotation_start, rotation_end + rotation_step, rotation_step)
+    
+    best_confidence = -1
+    best_angle = 0
+    best_points = []
+    best_confidences = []
+    results_low_res = []
+    
+    # # Downscale main image for quick search
+    # image_low_res = cv2.resize(image, (0,0), fx=0.5, fy=0.5)
+
+    # Test different rotations
+    for angle in angles:
+        try:
+            # print(f"Processing angle in small image: {angle}")
+            # Rotate template first, then resize for low-res matching
+            rotated_template_low_res = rotate_image(template_low_res, angle)
+            # template_low_res = cv2.resize(rotated_template, (0,0), fx=0.5, fy=0.5)
+            # th, tw = template_low_res.shape[:2]
+            
+            # Match on low-res
+            result = cv2.matchTemplate(image_low_res, rotated_template_low_res, method)
+            result_flat = result.flatten()
+            
+            if method == cv2.TM_SQDIFF_NORMED:
+                # For SQDIFF, lower is better
+                idxs = np.argpartition(result_flat, 10)[:10]
+                scores = result_flat[idxs]
+                sorted_idxs = idxs[np.argsort(scores)]
+                best_score = np.min(result_flat)
+                confidence = 1.0 - best_score  # Convert to similarity score
+            else:
+                # For others, higher is better
+                idxs = np.argpartition(-result_flat, 10)[:10]
+                scores = result_flat[idxs]
+                sorted_idxs = idxs[np.argsort(-scores)]
+                best_score = np.max(result_flat)
+                confidence = best_score
+
+            # Update best result if this angle gives better confidence
+            if confidence > best_confidence:
+                best_confidence = confidence
+                best_angle = angle
+                
+                # Convert flat indices to 2D coordinates
+                h, w = result.shape
+                best_points = [(int(idx % w), int(idx // w)) for idx in sorted_idxs]
+                best_confidences = [float(result[y, x]) for (x, y) in best_points]
+                
+                # Create results_low_res structure for this angle
+                results_low_res = []
+                for i, (x, y) in enumerate(best_points):
+                    conf = best_confidences[i]
+                    if method == cv2.TM_SQDIFF_NORMED:
+                        conf = 1.0 - conf  # Convert to similarity score
+                    results_low_res.append([conf, angle, x, y])
+                
+        except Exception as e:
+            print(f"Error processing angle {angle}: {str(e)}")
+            continue
+
+    # If no valid results found, return default values
+    if not best_points:
+        print("No valid matches found")
+        return [], [], 0, 0, []
+
+    # Draw rectangles on a copy of the low-res image for the best rotation
+    rotated_template = rotate_image(template, best_angle)
+    template_low_res = cv2.resize(rotated_template, (0,0), fx=0.5, fy=0.5)
+    th, tw = template_low_res.shape[:2]
+    if (False): # debug
+        vis = image_low_res.copy()
+        for i, (x, y) in enumerate(best_points):
+            color = (0, 255, 0) if i == 0 else (255, 0, 0)
+            cv2.rectangle(vis, (x, y), (x+tw, y+th), color, 2)
+            cv2.putText(vis, f"{i+1}", (x, y+15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+        
+        # Add rotation information to the image
+        cv2.putText(vis, f"Best angle: {best_angle:.1f} deg", (10, 30), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+        cv2.putText(vis, f"Best confidence: {best_confidence:.4f}", (10, 60), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+        cv2.putText(vis, f"Rotation step: {rotation_step:.1f} deg", (10, 90), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+
+        # Display the annotated low-res image
+        cv2.imshow('Top 10 Low-Res Matches (with rotation)', vis)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    # Return the top 10 points for further high-res refinement
+    return best_points, best_confidences, best_angle, best_confidence, results_low_res

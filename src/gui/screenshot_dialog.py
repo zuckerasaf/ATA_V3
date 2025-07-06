@@ -17,7 +17,7 @@ import os
 from src.utils.config import Config
 from PIL import ImageGrab, Image, ImageTk
 from pynput import mouse
-
+from src.utils.picture_handle import find_image, save_screenshot, capture_screen
 
 class ScreenshotDialog:
     """
@@ -167,7 +167,7 @@ class ScreenshotDialog:
         self.imagName_text.pack(fill="x", pady=(0, 10), padx=5)
         
         # Print Screen Window Section
-        ttk.Label(scrollable_frame, text="Print Screen Window Configuration:").pack(anchor="w", pady=(0, 5), padx=5)
+        ttk.Label(scrollable_frame, text="area to earch the template in :").pack(anchor="w", pady=(0, 5), padx=5)
         ps_frame = ttk.Frame(scrollable_frame)
         ps_frame.pack(fill="x", pady=(0, 10), padx=5)
         
@@ -262,6 +262,39 @@ class ScreenshotDialog:
         # # Add instruction label
         # self.instruction_label = ttk.Label(ps_frame, text="", foreground="blue")
         # self.instruction_label.grid(row=3, column=0, columnspan=4, pady=5)
+
+        # Rotation Testing Options
+        rotation_frame = ttk.LabelFrame(scrollable_frame, text="template rotation", padding="5")
+        rotation_frame.pack(fill="x", pady=10, padx=5)
+
+        # Enable rotation testing
+        self.enable_rotation = tk.BooleanVar(value=False)
+        ttk.Checkbutton(rotation_frame, text="Enable Rotation Testing", 
+                       variable=self.enable_rotation).pack(anchor="w", padx=5, pady=2)
+        
+        # Rotation range
+        range_row = ttk.Frame(rotation_frame)
+        range_row.pack(fill="x", pady=2)
+        ttk.Label(range_row, text="Rotation Range:").pack(side="left", padx=2)
+        self.rotation_start = tk.DoubleVar(value=-30.0)
+        self.rotation_end = tk.DoubleVar(value=30.0)
+        ttk.Entry(range_row, textvariable=self.rotation_start, width=8).pack(side="left", padx=2)
+        ttk.Label(range_row, text="to").pack(side="left", padx=2)
+        ttk.Entry(range_row, textvariable=self.rotation_end, width=8).pack(side="left", padx=2)
+        ttk.Label(range_row, text="degrees").pack(side="left", padx=2)
+        
+        # Rotation step
+        step_row = ttk.Frame(rotation_frame)
+        step_row.pack(fill="x", pady=2)
+        ttk.Label(step_row, text="Step (degrees):").pack(side="left", padx=2)
+        self.rotation_step = tk.DoubleVar(value=1.0)
+        ttk.Entry(step_row, textvariable=self.rotation_step, width=8).pack(side="left", padx=2)
+        
+        # Process Buttons
+        check_farme = ttk.Frame(scrollable_frame)
+        check_farme.pack(pady=20, fill="x")
+        
+        # ttk.Button(check_farme, text="check template  Image",  command=lambda: find_image().grid(row=0, column=0, padx=5)
         
         # Step Description Section
         ttk.Label(scrollable_frame, text="Step Description - Enter what this step does...:").pack(anchor="w", pady=(0, 5), padx=5)
@@ -334,17 +367,22 @@ class ScreenshotDialog:
                 self.ps_y_var.set(str(y))
                 self.ps_width_var.set(str(width))
                 self.ps_height_var.set(str(height))
+                screenshot = capture_screen(x, y, width, height) 
+                save_screenshot(screenshot, "ps.jpg")
             elif window_type == "tsw":
                 self.tsw_x_var.set(str(x))
                 self.tsw_y_var.set(str(y))
                 self.tsw_width_var.set(str(width))
                 self.tsw_height_var.set(str(height))
+                screenshot = capture_screen(x, y, width, height) 
+                save_screenshot(screenshot, "tsw.jpg")
             
-            # Update instruction label
-            self.instruction_label.config(text=f"Selected area: {width}x{height} at ({x},{y})")
-        else:
-            # Selection was cancelled
-            self.instruction_label.config(text="Area selection cancelled")
+
+            # # Update instruction label
+            # self.instruction_label.config(text=f"Selected area: {width}x{height} at ({x},{y})")
+        # else:
+            # # Selection was cancelled
+            # self.instruction_label.config(text="Area selection cancelled")
 
     def capture_screen_region(self, picture_name="test_image", window_type="ps") -> tuple:
         """
