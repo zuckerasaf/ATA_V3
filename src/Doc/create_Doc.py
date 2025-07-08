@@ -19,6 +19,7 @@ from docx.oxml.ns import qn
 from datetime import datetime
 from src.utils.config import Config
 import subprocess
+from src.utils.general_func import replace_last_part_of_string
 
 # Add project root to Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -296,57 +297,56 @@ def create_doc_from_json(json_path_list, pictures=True, Type="ATP", Regular_doc_
                     if event.get("action") == "Special key 'f2' pressed":
                         step_title = f"{event.get('screenshot_counter', '')}: {event.get('image_name', '')}"
                         doc.add_heading(step_title, level=3)
-                        doc.add_paragraph(f"Position: X= {event.get('pic_x', '')} , Y= {event.get('pic_y', '')} \t Dimension: W= {event.get('pic_width', '')} , H= {event.get('pic_height', '')}")
                         doc.add_paragraph(f"Result: {event.get('step_resau', '')}")
                         doc.add_paragraph(f"Time: {event.get('time', '')} ms")
-                        doc.add_paragraph(f"pic_path: {event.get('pic_path', '')}")
 
                         # Add image if available and not "none"
+                        pic_temlate_path = event.get("pic_template_path", "none")
+                        print(f"pic_template_path: '{pic_temlate_path}'")
                         pic_path = event.get("pic_path", "none")
-                        if pic_path and pic_path.lower() != "none" and os.path.exists(pic_path):
-                            try:
-                                if Type == "ATR":
-                                    # Calculate max width for each image
-                                    section = doc.sections[0]
-                                    page_width = section.page_width
-                                    left_margin = section.left_margin
-                                    right_margin = section.right_margin
-                                    available_width = page_width - left_margin - right_margin
-                                    img_width = (available_width / 2) - Inches(0.1)
+                        if Type == "ATR":
+                            match_pic_path = replace_last_part_of_string(pic_path, '_Result.jpg', '_Match')
+                        else:
+                            match_pic_path = replace_last_part_of_string(pic_path, '.jpg', '_Match')
+                        print(f"match_pic_path: '{match_pic_path}'")
 
-                                    # Prepare original (gray) image path remove the _Result from the end of the path
-                                    base, ext = os.path.splitext(pic_path)
-                                    print(f"base: '{base}'")
-                                    print(f"base[:-6]: '{base[:-6]}'")
-                                    diff_path = base[:-6] + "gray" + ext
-                                    print(f"diff_path: '{diff_path}'")
-                                    # Create a table with 2 columns for side-by-side images
-                                    img_table = doc.add_table(rows=2, cols=2)
-                                    img_table.autofit = False
-                                    # First row: images
-                                    cell1 = img_table.cell(0, 0)
-                                    cell2 = img_table.cell(0, 1)
-                                    run1 = cell1.paragraphs[0].add_run()
-                                    run1.add_picture(pic_path, width=img_width)
-                                    cell1.paragraphs[0].alignment = 1  # Center
-                                    if os.path.exists(diff_path):
-                                        run2 = cell2.paragraphs[0].add_run()
-                                        run2.add_picture(diff_path, width=img_width)
-                                        cell2.paragraphs[0].alignment = 1  # Center
+                        doc.add_paragraph(f"Template path: {pic_temlate_path}")
+                        doc.add_paragraph(f" Template Position: X= {event.get('pic_template_x', '')} , Y= {event.get('pic_template_y', '')} \t Dimension: W= {event.get('pic_template_width', '')} , H= {event.get('pic_template_height', '')}")
+
+                        doc.add_paragraph(f"Match path: {match_pic_path}")
+                       
+
+                        # Prepare original (gray) image path remove the _Result from the end of the path
+                        if match_pic_path and pic_temlate_path != "none" :
+                            try:
+                                # Calculate max width for each image
+                                section = doc.sections[0]
+                                page_width = section.page_width
+                                left_margin = section.left_margin
+                                right_margin = section.right_margin
+                                available_width = page_width - left_margin - right_margin
+                                img_width = (available_width / 2) - Inches(0.1)
+                                # Create a table with 2 columns for side-by-side images
+                                img_table = doc.add_table(rows=2, cols=2)
+                                img_table.autofit = False
+                                # First row: images
+                                cell1 = img_table.cell(0, 0)
+                                cell2 = img_table.cell(0, 1)
+                                run1 = cell1.paragraphs[0].add_run()
+                                run1.add_picture(pic_temlate_path, width=img_width)
+                                cell1.paragraphs[0].alignment = 1  # Center
+                                if os.path.exists(match_pic_path):
+                                    run2 = cell2.paragraphs[0].add_run()
+                                    run2.add_picture(match_pic_path, width=img_width)
+                                    cell2.paragraphs[0].alignment = 1  # Center
                                     # Second row: captions
                                     cell1_caption = img_table.cell(1, 0)
                                     cell2_caption = img_table.cell(1, 1)
-                                    cell1_caption.text = f"Figure: {event.get('image_name', '')}"
+                                    cell1_caption.text = f"Figure: {event.get('pic_temlate_name', 'Template')}"
                                     cell1_caption.paragraphs[0].alignment = 1
-                                    cell2_caption.text = "Figure: original in gray scale"
+                                    cell2_caption.text = "Figure: Match"
                                     cell2_caption.paragraphs[0].alignment = 1
-                                else:
-                                    doc.add_picture(pic_path, width=Inches(4))
-                                    caption = event.get('image_name', '')
-                                    if caption:
-                                        last_paragraph = doc.paragraphs[-1]
-                                        last_paragraph.alignment = 1  # Center the image
-                                        doc.add_paragraph(f"Figure: {caption}").alignment = 1  # Center the caption
+                               
                             except Exception as e:
                                 doc.add_paragraph(f"Could not add image: {pic_path} ({e})")
 

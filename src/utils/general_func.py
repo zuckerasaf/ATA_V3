@@ -16,6 +16,10 @@ create_test_from_json(filepath)
     Create a Test instance from a JSON file.
 update_images_to_test(result_folder_path)
     Copy all _Result.jpg images from a result folder to the corresponding test folder.
+replace_last_part_of_string(original_string, old_suffix, new_suffix)
+    Replace the last occurrence of a suffix in a string with a new suffix.
+insert_match_before_result(file_path)
+    Insert "_Match" before "_Result" in a file path.
 """
 
 import json
@@ -205,5 +209,54 @@ def update_images_to_test(result_folder_path):
     except Exception as e:
         print(f"Error copying images: {e}")
         return False
+    
+def replace_last_part_of_string(original_string, old_suffix, new_suffix):
+    """
+    Replace the last occurrence of a suffix in a string with a new suffix.
+    
+    Args:
+        original_string (str): The original string to modify
+        old_suffix (str): The suffix to find and replace
+        new_suffix (str): The new suffix to insert before the old suffix
+    
+    Returns:
+        str: The modified string with the new suffix inserted before the old suffix
+        
+    Example:
+        >>> replace_last_part_of_string(
+        ...     'C:\\path\\file_Result.jpg', 
+        ...     '_Result.jpg', 
+        ...     '_Match'
+        ... )
+        'C:\\path\\file_Match_Result.jpg'
+    """
+    if original_string.endswith(old_suffix):
+        # Remove the old suffix and add the new suffix + old suffix
+        base = original_string[:-len(old_suffix)]
+        return base + new_suffix + old_suffix
+    else:
+        # If the string doesn't end with the expected suffix, return original
+        return original_string
+
+def insert_match_before_result(file_path):
+    """
+    Insert "_Match" before "_Result" in a file path.
+    
+    This is a convenience function specifically for the common case of
+    inserting "_Match" before "_Result.jpg" in image file paths.
+    
+    Args:
+        file_path (str): The file path to modify
+        
+    Returns:
+        str: The modified file path with "_Match" inserted before "_Result"
+        
+    Example:
+        >>> insert_match_before_result(
+        ...     'C:\\path\\image_Result.jpg'
+        ... )
+        'C:\\path\\image_Match_Result.jpg'
+    """
+    return replace_last_part_of_string(file_path, '_Result.jpg', '_Match')
     
     

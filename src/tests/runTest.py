@@ -251,12 +251,18 @@ class TestRunner:
             step_accep=event.step_accep,
             step_resau=event.step_resau,
             pic_path=event.pic_path,
+            pic_template_path=event.pic_template_path,
             step_resau_num=event.step_resau_num,
             image_name=event.image_name,
             pic_width=event.pic_width if hasattr(event, 'pic_width') else 0,
             pic_height=event.pic_height if hasattr(event, 'pic_height') else 0,
             pic_x=event.pic_x if hasattr(event, 'pic_x') else 0,
             pic_y=event.pic_y if hasattr(event, 'pic_y') else 0,
+            pic_template_name=event.pic_template_name,
+            pic_template_width=event.pic_template_width if hasattr(event, 'pic_template_width') else 0,
+            pic_template_height=event.pic_template_height if hasattr(event, 'pic_template_height') else 0,
+            pic_template_x=event.pic_template_x if hasattr(event, 'pic_template_x') else 0,
+            pic_template_y=event.pic_template_y if hasattr(event, 'pic_template_y') else 0,
             pic_rotation_start=event.pic_rotation_start if hasattr(event, 'pic_rotation_start') else 0,
             pic_rotation_end=event.pic_rotation_end if hasattr(event, 'pic_rotation_end') else 0,
             pic_template_loc_x=event.pic_template_loc_x if hasattr(event, 'pic_template_loc_x') else 0,
@@ -423,6 +429,9 @@ class TestRunner:
                     threshold = image_compare_config.get("threshold", 0.8)
                     method = image_compare_config.get("match_algorithm", 0)
                     succsess, result_image, all_high_res_results, best_high_res_confidence, best_high_res_location= find_image(event.pic_template_path, screenshot_path,threshold, method, resevent.pic_rotation_start, resevent.pic_rotation_end)
+                    resevent.pic_template_loc_x = best_high_res_location[0][0]
+                    resevent.pic_template_loc_y = best_high_res_location[0][1]
+                    resevent.pic_template_confidence = best_high_res_confidence[0]
                     cv2.imwrite(Match_path, result_image)
                     resevent.step_resau = "match percentage is "+str(best_high_res_confidence)
                     match_percentage = int(best_high_res_confidence[0]*100)
