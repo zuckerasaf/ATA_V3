@@ -17,7 +17,9 @@ class Event:
                  pic_path: str = "noPic", screenshot_counter: int = 0, image_name: str = "noPic",
                  pic_width: int = 0, pic_height: int = 0, pic_x: int = 0, pic_y: int = 0,
                  pic_template_path: str = "noTemplatePic", pic_template_name: str = "noTemplatePic",
-                 pic_template_width: int = 1, pic_template_height: int = 1, pic_template_x: int = 1, pic_template_y: int = 1):
+                 pic_template_width: int = 1, pic_template_height: int = 1, pic_template_x: int = 1, pic_template_y: int = 1,
+                 pic_rotation_start: int = 0, pic_rotation_end: int = 0, pic_rotation_state: bool = False,
+                 pic_template_loc_x: int = 0, pic_template_loc_y: int = 0, pic_template_confidence: float = 0):
         """
         Initialize a new Event instance.
         
@@ -76,6 +78,12 @@ class Event:
         self.pic_template_height = pic_template_height
         self.pic_template_x = pic_template_x
         self.pic_template_y = pic_template_y
+        self.pic_rotation_start = pic_rotation_start
+        self.pic_rotation_end = pic_rotation_end
+        self.pic_rotation_state = pic_rotation_state
+        self.pic_template_loc_x = pic_template_loc_x
+        self.pic_template_loc_y = pic_template_loc_y
+        self.pic_template_confidence = pic_template_confidence
         self.screenshot = None  # Store the screenshot image
 
 
@@ -92,7 +100,11 @@ class Event:
                f"pic_x={self.pic_x}, pic_y={self.pic_y}, pic_template_path='{self.pic_template_path}', " \
                f"pic_template_name='{self.pic_template_name}', pic_template_width={self.pic_template_width}, " \
                f"pic_template_height={self.pic_template_height}, pic_template_x={self.pic_template_x}, " \
-               f"pic_template_y={self.pic_template_y})"
+               f"pic_template_y={self.pic_template_y}, pic_rotation_start={self.pic_rotation_start}, " \
+               f"pic_rotation_end={self.pic_rotation_end}, pic_rotation_state={self.pic_rotation_state}, " \
+               f"pic_template_loc_x={self.pic_template_loc_x}, pic_template_loc_y={self.pic_template_loc_y}, " \
+               f"pic_template_confidence={self.pic_template_confidence})"
+    
     
     def __repr__(self) -> str:
         """Detailed string representation of the Event."""
@@ -127,7 +139,13 @@ class Event:
             'pic_template_width': self.pic_template_width,
             'pic_template_height': self.pic_template_height,
             'pic_template_x': self.pic_template_x,
-            'pic_template_y': self.pic_template_y
+            'pic_template_y': self.pic_template_y,
+            'pic_rotation_start': self.pic_rotation_start,
+            'pic_rotation_end': self.pic_rotation_end,
+            'pic_rotation_state': self.pic_rotation_state,
+            'pic_template_loc_x': self.pic_template_loc_x,
+            'pic_template_loc_y': self.pic_template_loc_y,
+            'pic_template_confidence': self.pic_template_confidence
         }
     
     @classmethod
@@ -160,5 +178,11 @@ class Event:
             pic_template_width=data.get('pic_template_width', 0),
             pic_template_height=data.get('pic_template_height', 0),
             pic_template_x=data.get('pic_template_x', 0),
-            pic_template_y=data.get('pic_template_y', 0)
+            pic_template_y=data.get('pic_template_y', 0),
+            pic_rotation_start=data.get('pic_rotation_start', 0),
+            pic_rotation_end=data.get('pic_rotation_end', 0),
+            pic_rotation_state=data.get('pic_rotation_state', False),
+            pic_template_loc_x=data.get('pic_template_loc_x', 0),
+            pic_template_loc_y=data.get('pic_template_loc_y', 0),
+            pic_template_confidence=data.get('pic_template_confidence', 0)
         )

@@ -255,7 +255,7 @@ class EventListener:
                 'times': self.drag_times
             })
 
-        if self.save == True:
+        if self.save == True :
             # Add event to current test
             self.current_test.add_event(event)
             
@@ -346,6 +346,9 @@ class EventListener:
                     event.pic_template_height = dialog.result['tsw_height']
                     event.pic_template_x = dialog.result['tsw_x']
                     event.pic_template_y = dialog.result['tsw_y']
+                    event.pic_rotation_start = dialog.result['rotation_start']
+                    event.pic_rotation_end = dialog.result['rotation_end']
+                    event.pic_rotation_state = dialog.result['rotation_state']
 
 
                     if dialog.result:
@@ -360,8 +363,8 @@ class EventListener:
                                 self.test_name, self.screenshot_counter, dialog.result['image_name'],"Recording","none")
                             template_filename, template_path = generate_screenshot_filename(
                                 self.test_name, self.screenshot_counter, dialog.result['image_name']+"_Template","Recording","none")
-                            result_filename, result_path = generate_screenshot_filename(
-                                self.test_name, self.screenshot_counter, dialog.result['image_name']+"_Result","Recording","none")
+                            Match_filename, Match_path = generate_screenshot_filename(
+                                self.test_name, self.screenshot_counter, dialog.result['image_name']+"_Match","Recording","none")
                             
                             if screenshot_filename and screenshot_path:
                                 self.save = True # Resume saving events
@@ -373,10 +376,15 @@ class EventListener:
                                 event.priority = dialog.result['priority']
                                 event.pic_path =  save_screenshot(screenshot, screenshot_path)
                                 event.pic_template_path =  save_screenshot(templateshot, template_path)
-
-                                succsess, result_image, all_high_res_results, best_high_res_confidence, best_high_res_location= find_image(template_path, screenshot_path)
-                                cv2.imwrite(result_path, result_image)
+                                image_compare_config = config.get_Image_compare_config()
+                                threshold = image_compare_config.get("threshold", 0.8)
+                                method = image_compare_config.get("match_algorithm", 0)
+                                succsess, result_image, all_high_res_results, best_high_res_confidence, best_high_res_location= find_image(template_path, screenshot_path,threshold, method, rotation_start=event.pic_rotation_start, rotation_end=event.pic_rotation_end)
+                                cv2.imwrite(Match_path, result_image)
                                 #result_image_path = save_screenshot(result_image, result_path)
+                                event.pic_template_loc_x = best_high_res_location[0][0]
+                                event.pic_template_loc_y = best_high_res_location[0][1]
+                                event.pic_template_confidence = best_high_res_confidence[0]
 
                                 event.time_in_screenshot_dialog = time_in_dialog  # Store the time spent in dialog
                                 self.current_test.numOfSteps += 1
@@ -387,11 +395,8 @@ class EventListener:
                                 self.current_test.total_time_in_screenshot_dialog += time_in_dialog
 
                                 
-                                run_log.add(str(event.pic_path), level="IMAGE")
-                                run_log.add("screenshot taken with name " + dialog.result['image_name'], level="INFO")
-
-
-                     
+                                run_log.add(str(Match_path), level="IMAGE")
+                                run_log.add("screenshot taken with name " + dialog.result['image_name'], level="INFO")       
                     self.save = True
             
 

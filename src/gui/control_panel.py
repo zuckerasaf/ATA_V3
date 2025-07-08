@@ -901,13 +901,13 @@ class ControlPanel:
                         if sys.platform == 'win32':
                             # Open the result image
                             os.startfile(image_path)
-                            # Try to open the corresponding diff image
-                            diff_path = image_path.replace("_Result.jpg", "_gray.jpg")
-                            if os.path.exists(diff_path):
-                                os.startfile(diff_path)
-                            diff_path = image_path.replace("_Result.jpg", "_Result_diff.jpg")
-                            if os.path.exists(diff_path):
-                                os.startfile(diff_path)
+                            # # Try to open the corresponding diff image
+                            # diff_path = image_path.replace("_Result.jpg", "_gray.jpg")
+                            # if os.path.exists(diff_path):
+                            #     os.startfile(diff_path)
+                            # diff_path = image_path.replace("_Result.jpg", "_Result_diff.jpg")
+                            # if os.path.exists(diff_path):
+                            #     os.startfile(diff_path)
                         else:
                             messagebox.showerror("Error", "Image opening is only supported on Windows.")
                     else:

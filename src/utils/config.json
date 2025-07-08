@@ -118,7 +118,12 @@
         "tolerance": 10,
         "debug": true,
         "threshold" : 0.8,
-        "frame_threshold": 20
+        "frame_threshold": 20,
+        "rotation_start": -30,
+        "rotation_end": 30,
+        "rotation_step": 1,
+        "match_algorithm": ["TM_CCOEFF_NORMED", "TM_CCORR_NORMED", "TM_SQDIFF_NORMED"],
+        "distance_error": 0.1
     },
     "minmumMatchPresent_high": 80,
     "minmumMatchPresent_medium": 50,

@@ -411,7 +411,7 @@ def save_screenshot(screenshot, filepath: str) -> None:
         screenshot.save(filepath, 'JPEG')
         return filepath  # Update the pic_path field with the saved file path
     
-def find_image(template_path, image_path, threshold=0.8, method=cv2.TM_CCOEFF_NORMED, rotation_start=0, rotation_end=0, rotation_step=0):
+def find_image(template_path, image_path, threshold=0.8, method=0, rotation_start=0, rotation_end=0, rotation_step=0):
     """
     Find a template image within a larger image.
     
@@ -424,6 +424,18 @@ def find_image(template_path, image_path, threshold=0.8, method=cv2.TM_CCOEFF_NO
     Returns:
         tuple: (success, result_image, matches, confidences, locations)
     """
+    if method == 0:
+        method = cv2.TM_CCOEFF_NORMED
+    elif method == 1:
+        method = cv2.TM_CCORR_NORMED
+    elif method == 2:
+        method = cv2.TM_SQDIFF_NORMED
+    else:
+        method = cv2.TM_CCOEFF_NORMED
+
+    rotation_start = int(rotation_start)
+    rotation_end = int(rotation_end)
+    rotation_step = int(rotation_step)
 
     try:
     # Read the images
@@ -553,7 +565,7 @@ def create_result_image(image, best_confidence, threshold, method, locations, be
         
     #if the result is greater than the threshold, the color is green, otherwise red
     if best_confidence >= threshold:
-        RGB = (0, 0, 0)
+        RGB = (255, 0, 0)
     else:
         RGB = (0, 0, 255)
 
@@ -561,23 +573,23 @@ def create_result_image(image, best_confidence, threshold, method, locations, be
     if locations:  # Check if any matches were found
         #best_location = locations[0]  # First location has highest confidence
         cv2.rectangle(result_image, locations, 
-                     (locations[0] + w, locations[1] + h), RGB, 2)
+                     (locations[0] + w, locations[1] + h), (0, 255, 0), 2)
             
         # Add information to image (fixed positioning and method name)
         method_name = "TM_CCOEFF_NORMED" if method == cv2.TM_CCOEFF_NORMED else \
                      "TM_CCORR_NORMED" if method == cv2.TM_CCORR_NORMED else \
                      "TM_SQDIFF_NORMED" if method == cv2.TM_SQDIFF_NORMED else "Unknown"
         
-        draw_text_with_background(result_image, f"Method: {method_name}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
-        draw_text_with_background(result_image, f"Threshold: {threshold:.2f}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
-        draw_text_with_background(result_image, f"Best angle: {best_angle:.1f} deg", (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
-        draw_text_with_background(result_image, f"Confidence: {best_confidence:.4f}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
+        draw_text_with_background(result_image, f"{method_name}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
+        draw_text_with_background(result_image, f"TH: {threshold:.2f}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
+        draw_text_with_background(result_image, f"BA: {best_angle:.1f} deg", (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
+        draw_text_with_background(result_image, f"BC: {best_confidence:.4f}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, RGB, 2)
     else:
         draw_text_with_background(result_image, "No matches found", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     
     return result_image
 
-def draw_text_with_background(img, text, org, font, font_scale, color, thickness, bg_color=(0,0,0), alpha=0.5):
+def draw_text_with_background(img, text, org, font, font_scale, color, thickness, bg_color=(255,255,255), alpha=0.5):
     # Get the text size
     (text_w, text_h), baseline = cv2.getTextSize(text, font, font_scale, thickness)
     x, y = org

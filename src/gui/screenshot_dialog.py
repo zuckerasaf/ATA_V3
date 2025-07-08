@@ -104,6 +104,9 @@ class ScreenshotDialog:
         self.default_tsw_height = ps_config.get('TSW_height', 700)
         self.default_tsw_x = ps_config.get('TSW_position', {}).get('TSW_x', 50)
         self.default_tsw_y = ps_config.get('TSW_position', {}).get('TSW_y', 50)
+        self.default_rotation_start = ps_config.get('rotation_start', 0)
+        self.default_rotation_end = ps_config.get('rotation_end', 0)
+        self.default_rotation_state = ps_config.get('rotation_state', False)
         
         # Create the dialog window
         self.dialog = tk.Toplevel()
@@ -170,6 +173,14 @@ class ScreenshotDialog:
         ttk.Label(scrollable_frame, text="area to earch the template in :").pack(anchor="w", pady=(0, 5), padx=5)
         ps_frame = ttk.Frame(scrollable_frame)
         ps_frame.pack(fill="x", pady=(0, 10), padx=5)
+
+                # Preview Frame
+        self.preview_frame = ttk.LabelFrame(scrollable_frame, text="Preview Image", padding="5")
+        self.preview_frame.pack(fill="x", pady=(0, 10))
+
+        # Preview Labels
+        self.image_preview = ttk.Label(self.preview_frame, text="Image Preview")
+        self.image_preview.pack(side="left", padx=5)
         
         # Width
         ttk.Label(ps_frame, text="Width:").grid(row=0, column=0, padx=5, pady=2)
@@ -208,6 +219,15 @@ class ScreenshotDialog:
         ttk.Label(scrollable_frame, text="template Screen Window Configuration:").pack(anchor="w", pady=(0, 5), padx=5)
         ps_frame = ttk.Frame(scrollable_frame)
         ps_frame.pack(fill="x", pady=(0, 10), padx=5)
+
+                # Preview  template Frame
+        self.preview_template_frame = ttk.LabelFrame(scrollable_frame, text="Preview Template", padding="5")
+        self.preview_template_frame.pack(fill="x", pady=(0, 10))
+
+        # Preview Labels template
+        self.template_preview = ttk.Label(self.preview_template_frame, text="Template Preview")
+        self.template_preview.pack(side="left", padx=5)
+
         
         # Width
         ttk.Label(ps_frame, text="template Width:").grid(row=0, column=0, padx=5, pady=2)
@@ -230,21 +250,21 @@ class ScreenshotDialog:
         ttk.Entry(ps_frame, textvariable=self.tsw_y_var, width=10).grid(row=1, column=3, padx=5, pady=2)
         
 
-        # Preview Frame
-        self.preview_frame = ttk.LabelFrame(scrollable_frame, text="Preview Image", padding="5")
-        self.preview_frame.pack(fill="x", pady=(0, 10))
+        # # Preview Frame
+        # self.preview_frame = ttk.LabelFrame(scrollable_frame, text="Preview Image", padding="5")
+        # self.preview_frame.pack(fill="x", pady=(0, 10))
 
-        # Preview Labels
-        self.image_preview = ttk.Label(self.preview_frame, text="Image Preview")
-        self.image_preview.pack(side="left", padx=5)
+        # # Preview Labels
+        # self.image_preview = ttk.Label(self.preview_frame, text="Image Preview")
+        # self.image_preview.pack(side="left", padx=5)
 
-        # Preview  template Frame
-        self.preview_template_frame = ttk.LabelFrame(scrollable_frame, text="Preview Template", padding="5")
-        self.preview_template_frame.pack(fill="x", pady=(0, 10))
+        # # Preview  template Frame
+        # self.preview_template_frame = ttk.LabelFrame(scrollable_frame, text="Preview Template", padding="5")
+        # self.preview_template_frame.pack(fill="x", pady=(0, 10))
 
-        # Preview Labels template
-        self.template_preview = ttk.Label(self.preview_template_frame, text="Template Preview")
-        self.template_preview.pack(side="left", padx=5)
+        # # Preview Labels template
+        # self.template_preview = ttk.Label(self.preview_template_frame, text="Template Preview")
+        # self.template_preview.pack(side="left", padx=5)
 
 
         # Buttons frame
@@ -263,6 +283,8 @@ class ScreenshotDialog:
         # self.instruction_label = ttk.Label(ps_frame, text="", foreground="blue")
         # self.instruction_label.grid(row=3, column=0, columnspan=4, pady=5)
 
+
+
         # Rotation Testing Options
         rotation_frame = ttk.LabelFrame(scrollable_frame, text="template rotation", padding="5")
         rotation_frame.pack(fill="x", pady=10, padx=5)
@@ -276,19 +298,19 @@ class ScreenshotDialog:
         range_row = ttk.Frame(rotation_frame)
         range_row.pack(fill="x", pady=2)
         ttk.Label(range_row, text="Rotation Range:").pack(side="left", padx=2)
-        self.rotation_start = tk.DoubleVar(value=-30.0)
-        self.rotation_end = tk.DoubleVar(value=30.0)
+        self.rotation_start = tk.DoubleVar(value=-0)
+        self.rotation_end = tk.DoubleVar(value=0)
         ttk.Entry(range_row, textvariable=self.rotation_start, width=8).pack(side="left", padx=2)
         ttk.Label(range_row, text="to").pack(side="left", padx=2)
         ttk.Entry(range_row, textvariable=self.rotation_end, width=8).pack(side="left", padx=2)
         ttk.Label(range_row, text="degrees").pack(side="left", padx=2)
         
-        # Rotation step
-        step_row = ttk.Frame(rotation_frame)
-        step_row.pack(fill="x", pady=2)
-        ttk.Label(step_row, text="Step (degrees):").pack(side="left", padx=2)
-        self.rotation_step = tk.DoubleVar(value=1.0)
-        ttk.Entry(step_row, textvariable=self.rotation_step, width=8).pack(side="left", padx=2)
+        # # Rotation step
+        # step_row = ttk.Frame(rotation_frame)
+        # step_row.pack(fill="x", pady=2)
+        # ttk.Label(step_row, text="Step (degrees):").pack(side="left", padx=2)
+        # self.rotation_step = tk.DoubleVar(value=1.0)
+        # ttk.Entry(step_row, textvariable=self.rotation_step, width=8).pack(side="left", padx=2)
         
         # Process Buttons
         check_farme = ttk.Frame(scrollable_frame)
@@ -339,6 +361,10 @@ class ScreenshotDialog:
         ttk.Button(button_frame, text="OK", command=self._on_ok).pack(side="right", padx=5 )
         ttk.Button(button_frame, text="Cancel", command=self._on_cancel).pack(side="right", padx=5)
         
+        time.sleep(1) # wait for the window to be created
+        self._present_image_preview((10, 10, 1000, 800), "ps")
+        self._present_image_preview((50, 50, 900, 700), "tsw")
+
         # Set focus to the dialog window itself instead of any entry
         self.dialog.focus_set()
         
@@ -474,28 +500,30 @@ class ScreenshotDialog:
                     
                 # Wait a moment for the window to close
                 time.sleep(0.1)
-                
-                # Capture the screen
-                screenshot = ImageGrab.grab()
-                
-                # Crop to selected region
                 x1, y1, x2, y2 = self.selection_coords
-                cropped = screenshot.crop((x1, y1, x2, y2))
+                self.dialog_ref._present_image_preview(self.selection_coords, self.window_type)
+
+                # # Capture the screen
+                # screenshot = ImageGrab.grab()
                 
-                # Resize for preview (max 200x200 pixels)
-                preview_size = (200, 200)
-                cropped.thumbnail(preview_size, Image.Resampling.LANCZOS)
+                # # Crop to selected region
+                # x1, y1, x2, y2 = self.selection_coords
+                # cropped = screenshot.crop((x1, y1, x2, y2))
                 
-                # Convert to PhotoImage for tkinter
-                photo = ImageTk.PhotoImage(cropped)
+                # # Resize for preview (max 200x200 pixels)
+                # preview_size = (200, 200)
+                # cropped.thumbnail(preview_size, Image.Resampling.LANCZOS)
                 
-                # Update the appropriate preview label
-                if self.window_type == "tsw":
-                    self.dialog_ref.template_preview.config(image=photo, text="")
-                    self.dialog_ref.template_preview.image = photo  # Keep a reference
-                else:  # ps
-                    self.dialog_ref.image_preview.config(image=photo, text="")
-                    self.dialog_ref.image_preview.image = photo  # Keep a reference
+                # # Convert to PhotoImage for tkinter
+                # photo = ImageTk.PhotoImage(cropped)
+                
+                # # Update the appropriate preview label
+                # if self.window_type == "tsw":
+                #     self.dialog_ref.template_preview.config(image=photo, text="")
+                #     self.dialog_ref.template_preview.image = photo  # Keep a reference
+                # else:  # ps
+                #     self.dialog_ref.image_preview.config(image=photo, text="")
+                #     self.dialog_ref.image_preview.image = photo  # Keep a reference
                 
                 # Return coordinates (x, y, width, height)
                 return (x1, y1, x2 - x1, y2 - y1)
@@ -503,6 +531,33 @@ class ScreenshotDialog:
         # Create and run the screen capture
         capture_tool = ScreenCapture(picture_name, window_type, self)
         return capture_tool.capture()
+
+    def _present_image_preview(self, selection_coords, window_type):
+        """
+        Present the image preview.
+        """
+
+        # Capture the screen
+        screenshot = ImageGrab.grab()
+
+        # Crop to selected region
+        x1, y1, x2, y2 = selection_coords
+        cropped = screenshot.crop((x1, y1, x2, y2))
+                
+        # Resize for preview (max 200x200 pixels)
+        preview_size = (200, 200)
+        cropped.thumbnail(preview_size, Image.Resampling.LANCZOS)
+                
+        # Convert to PhotoImage for tkinter
+        photo = ImageTk.PhotoImage(cropped)
+                
+        # Update the appropriate preview label
+        if window_type == "tsw":
+            self.template_preview.config(image=photo, text="")
+            self.template_preview.image = photo  # Keep a reference
+        else:  # ps
+            self.image_preview.config(image=photo, text="")
+            self.image_preview.image = photo  # Keep a reference
 
     def _reset_values(self, window_type):
         """
@@ -515,18 +570,22 @@ class ScreenshotDialog:
             self.ps_height_var.set(str(self.default_ps_height))
             self.ps_x_var.set(str(self.default_ps_x))
             self.ps_y_var.set(str(self.default_ps_y))
-            self.image_preview.config(image=None, text="")
-            if hasattr(self.image_preview, 'image'):
-                self.image_preview.image = None  # Remove reference to the image
+
+            self._present_image_preview((10, 10, 1000, 800), "ps")
+            # self.image_preview.config(image=None, text="")
+            # if hasattr(self.image_preview, 'image'):
+            #     self.image_preview.image = None  # Remove reference to the image
         elif window_type == "tsw":
             self.tsw_width_var.set(str(self.default_tsw_width))
             self.tsw_height_var.set(str(self.default_tsw_height))
             self.tsw_x_var.set(str(self.default_tsw_x))
             self.tsw_y_var.set(str(self.default_tsw_y))
-            self.template_preview.config(image=None, text="")
-            if hasattr(self.template_preview, 'image'):
-                self.template_preview.image = None  # Remove reference to the template image
 
+            self._present_image_preview((50, 50, 900, 700), "tsw")
+            # self.template_preview.config(image=None, text="")
+            # if hasattr(self.template_preview, 'image'):
+            #     self.template_preview.image = None  # Remove reference to the template image
+    
             
     def _on_ok(self):
         """
@@ -541,6 +600,44 @@ class ScreenshotDialog:
         step_accep = self.accep_text.get("1.0", "end-1c")
 
 
+        # check the bouderies coodinate of the template image to make sure oits not out of the search area
+        tsw_x = int(self.tsw_x_var.get())
+        tsw_y = int(self.tsw_y_var.get())
+        tsw_width = int(self.tsw_width_var.get())
+        tsw_height = int(self.tsw_height_var.get())
+        ps_x = int(self.ps_x_var.get())
+        ps_y = int(self.ps_y_var.get())
+        ps_width = int(self.ps_width_var.get())
+        ps_height = int(self.ps_height_var.get())
+
+        if tsw_x < ps_x or tsw_x + tsw_width > ps_x + ps_width or tsw_y < ps_y or tsw_y + tsw_height > ps_y + ps_height:
+            messagebox.showwarning(
+                "boundary error",
+                "make sure the template image is in the search area - boundary error",
+                parent=self.dialog
+            )
+            return
+        # check the start angle is not greater than the end angle
+        if self.rotation_start.get() > self.rotation_end.get():
+            messagebox.showwarning(
+                "Invalid Rotation",
+                "make sure the start angle is not greater than the end angle",
+                parent=self.dialog
+            )   
+            return
+
+        # check their is  a mtch between the template and the search area if not return
+        succsess, result_image, all_high_res_results, best_high_res_confidence, best_high_res_location= find_image("tsw.jpg","ps.jpg", 0.8, 0, self.rotation_start.get(), self.rotation_end.get())
+        if best_high_res_confidence[0] < 0.8:
+            messagebox.showwarning(
+                "Invalid match ",
+                "make sure the template image is in the search area - no match: {best_high_res_confidence[0]}",
+                parent=self.dialog
+            )
+            return
+
+        
+        # check the image name is not empty
         if not image_name:
             messagebox.showwarning(
                 "Invalid Name",
@@ -569,6 +666,9 @@ class ScreenshotDialog:
             tsw_height = int(self.tsw_height_var.get())
             tsw_x = int(self.tsw_x_var.get())
             tsw_y = int(self.tsw_y_var.get())
+            rotation_start = int(self.rotation_start.get())
+            rotation_end = int(self.rotation_end.get())
+            rotation_state = self.enable_rotation.get()
         except ValueError:
             messagebox.showerror("Invalid Input", "Please enter valid numbers for Print Screen window dimensions and position.")
             return
@@ -585,7 +685,10 @@ class ScreenshotDialog:
             'tsw_width': tsw_width,
             'tsw_height': tsw_height,
             'tsw_x': tsw_x,
-            'tsw_y': tsw_y
+            'tsw_y': tsw_y,
+            'rotation_start': rotation_start,
+            'rotation_end': rotation_end,
+            'rotation_state': rotation_state
         }
         print("\nDialog data being saved:")
         print(f"Priority: {self.result['priority']}")

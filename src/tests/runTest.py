@@ -17,9 +17,11 @@ main(test_full_name=None, callback=None)
 """
 
 import os
+import cv2
 import sys
 import json
 import time
+import math
 from pynput import mouse, keyboard
 from datetime import datetime
 import threading
@@ -38,7 +40,7 @@ from src.utils.config import Config
 from src.gui.event_window import EventWindow
 from src.utils.event_mouse_keyboard import Event
 from src.utils.process_utils import is_already_running, register_cleanup, cleanup_and_restart, save_test, close_existing_mouse_threads
-from src.utils.picture_handle import capture_screen, generate_screenshot_filename, compare_images, save_screenshot
+from src.utils.picture_handle import capture_screen, generate_screenshot_filename, compare_images, save_screenshot, find_image
 from src.utils.starting_points import go_to_starting_point
 from src.utils.general_func import create_test_from_json
 from src.utils.run_log import RunLog
@@ -254,7 +256,13 @@ class TestRunner:
             pic_width=event.pic_width if hasattr(event, 'pic_width') else 0,
             pic_height=event.pic_height if hasattr(event, 'pic_height') else 0,
             pic_x=event.pic_x if hasattr(event, 'pic_x') else 0,
-            pic_y=event.pic_y if hasattr(event, 'pic_y') else 0
+            pic_y=event.pic_y if hasattr(event, 'pic_y') else 0,
+            pic_rotation_start=event.pic_rotation_start if hasattr(event, 'pic_rotation_start') else 0,
+            pic_rotation_end=event.pic_rotation_end if hasattr(event, 'pic_rotation_end') else 0,
+            pic_template_loc_x=event.pic_template_loc_x if hasattr(event, 'pic_template_loc_x') else 0,
+            pic_template_loc_y=event.pic_template_loc_y if hasattr(event, 'pic_template_loc_y') else 0,
+            pic_template_confidence=event.pic_template_confidence if hasattr(event, 'pic_template_confidence') else 0
+
         )
 
     def execute_mouse_event(self, event):
@@ -397,20 +405,27 @@ class TestRunner:
                 self.screenshot_counter += 1
                 resevent.screenshot_counter = self.screenshot_counter
                 self.test
+                file_name = os.path.basename(resevent.pic_path)
+                file_name_without_extension = os.path.splitext(file_name)[0]
                 
                 screenshot_filename, screenshot_path = generate_screenshot_filename(
-                        self.test.comment1.split(": ")[1], self.screenshot_counter,os.path.basename(resevent.pic_path),"running",self.result_folder_path)
-                
+                        self.test.comment1.split(": ")[1], self.screenshot_counter,file_name,"running",self.result_folder_path)
+                Match_filename, Match_path = generate_screenshot_filename(
+                        self.test.comment1.split(": ")[1], self.screenshot_counter,file_name_without_extension+"_Match.jpg","running",self.result_folder_path)
                 if screenshot_filename and screenshot_path:
                     # Update the event with the screenshot and save it first
                     #resevent.screenshot = screenshot
                     
                     resevent.pic_path = save_screenshot(screenshot, screenshot_path)
                     
-                    # Now compare the images using the saved file paths
-                    match_percentage, result_path = compare_images(event.pic_path, screenshot_path, self.result_folder_path)
-                    #resevent.step_resau = "match percentage is "+str(match_percentage)
-
+ 
+                    image_compare_config = config.get_Image_compare_config()
+                    threshold = image_compare_config.get("threshold", 0.8)
+                    method = image_compare_config.get("match_algorithm", 0)
+                    succsess, result_image, all_high_res_results, best_high_res_confidence, best_high_res_location= find_image(event.pic_template_path, screenshot_path,threshold, method, resevent.pic_rotation_start, resevent.pic_rotation_end)
+                    cv2.imwrite(Match_path, result_image)
+                    resevent.step_resau = "match percentage is "+str(best_high_res_confidence)
+                    match_percentage = int(best_high_res_confidence[0]*100)
                     if resevent.priority == "high":
                         match_percentage_ref = config.get("minmumMatchPresent_high")
                     elif resevent.priority == "medium":
@@ -418,14 +433,20 @@ class TestRunner:
                     else:
                         match_percentage_ref = config.get("minmumMatchPresent_low")
 
+                    distance = math.hypot(best_high_res_location[0][0] - event.pic_template_loc_x, best_high_res_location[0][1] - event.pic_template_loc_y)
+                    distance_error = image_compare_config.get("distance_error", 0.1)
 
                     pass_criteria = 100-self.current_test.accuracy_level*5
-                    if match_percentage < pass_criteria:
+                    if match_percentage< int(pass_criteria):
                         resevent.step_resau = " failed, grade is " + str(match_percentage) + " < " + str(pass_criteria)
                         status="failed"
                     else:
-                        resevent.step_resau = " passed, grade is " + str(match_percentage) + " > " + str(pass_criteria)   
-                        status="passed"
+                        if int(distance) > int(screenshot.width * distance_error):
+                            resevent.step_resau = " failed, the temaplate was found but the distance is too far"
+                            status="failed"
+                        else:
+                            resevent.step_resau = " passed, grade is " + str(match_percentage) + " > " + str(pass_criteria)  + " and the distance is " + str(distance)  
+                            status="passed"
 
                     self.current_test.numOfSteps += 1
                     self.current_test.stepResult.append(["step -" + str(event.screenshot_counter),status])  
@@ -434,9 +455,9 @@ class TestRunner:
                     if self.event_window:
                         self.event_window.update_event(resevent)
 
-
+                    run_log.add(str(Match_path), level="IMAGE")
                     run_log.add(event.step_desc + " - " + resevent.step_resau, level="INFO")
-                    run_log.add(str(resevent.pic_path), level="IMAGE")
+                    
 
                     if match_percentage < match_percentage_ref:
                         print(f"Match percentage is less than {config.get('match_percentage_ref')}, ending test...")

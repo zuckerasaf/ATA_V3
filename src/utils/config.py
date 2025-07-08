@@ -182,7 +182,12 @@ class Config:
             'tolerance': 0,
             'debug': True,
             'threshold': 0.8,
-            'frame_threshold': 20
+            'frame_threshold': 20,
+            'rotation_start': -30,
+            'rotation_end': 30,
+            'rotation_step': 1,
+            'match_algorithm': ["TM_CCOEFF_NORMED", "TM_CCORR_NORMED", "TM_SQDIFF_NORMED"],
+            'distance_error': 0.1
         })
     
     def get_invalid_chars(self) -> str:
