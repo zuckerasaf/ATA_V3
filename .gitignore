@@ -11,4 +11,22 @@ src/gui/__pycache__/
 *.pyc
 src/gui/build/
 src/gui/dist/
-
+# PyInstaller build artifacts
+*.spec
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.dll
+*.dylib
+*.exe
+*.app
+*.msi
+*.deb
+*.rpm
+*.pkg
+*.tar.gz
+*.zip
+control_panel.spec

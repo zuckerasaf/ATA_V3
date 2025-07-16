@@ -3,14 +3,14 @@
         "software": {
             "SW_1": 
             {
-                "name": "Windows 10",
-                "version": "10.0.19045",
-                "comment": "this is a comment"
+                "name": "EditionWindows 10 Home",
+                "version": "19045.6093",
+                "comment": "Version 22H2"
             },
             "SW_2": {
                 "name": "ATA",
-                "version": "2.0.0",
-                "comment": "this is a comment"
+                "version": "3.0.0",
+                "comment": "running in debug(from cursor) mode"
             },
             "SW_3": {
                 "name": "TBD_3",
@@ -20,17 +20,17 @@
         },
         "hardware": {
             "PC_1": {
-                "name": "PC_1",
-                "comment_1": "this is a comment",
-                "comment_2": "this is another comment"
+                "name": "LAPTOP-O74607R2",
+                "System Type": "64-bit operating system, x64-based processor",
+                "Processor": "11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz   2.42 GHz"
             },
             "PC_2": {
-                "name": "PC_2",
+                "name": "Machine 2",
                 "comment_1": "this is a comment",
                 "comment_2": "this is another comment"
             },
             "PC_3": {
-                "name": "PC_3",
+                "name": "Machine 3",
                 "comment_1": "this is a comment",
                 "comment_2": "this is another comment"
             }

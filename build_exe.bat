@@ -6,6 +6,15 @@ call venv\Scripts\activate
 
 REM Clean up old build files
 echo Cleaning up old build files...
+
+REM Kill any running instances of control_panel.exe
+echo Stopping any running instances...
+taskkill /f /im control_panel.exe >nul 2>&1
+
+REM Clean PyInstaller cache
+echo Cleaning PyInstaller cache...
+pyinstaller --clean >nul 2>&1
+
 if exist "dist" rd /s /q "dist"
 if exist "build" rd /s /q "build"
 if exist "control_panel.spec" del "control_panel.spec"
@@ -14,6 +23,7 @@ REM Create spec file
 echo Creating spec file...
 pyi-makespec ^
     --onefile ^
+    --icon "ATA.ico" ^
     --add-data "src\utils\config.json;utils" ^
     --add-data "src\Doc\Doc_config.json;Doc" ^
     --hidden-import=tkinter ^
@@ -68,6 +78,13 @@ pyinstaller --noconfirm ^
 
 echo Build complete!
 echo The executable is in the dist folder.
+
+REM Copy configuration files to dist folder
+echo Copying configuration files to dist folder...
+copy "src\utils\config.json" "dist\config.json"
+copy "src\Doc\Doc_config.json" "dist\Doc_config.json"
+echo Configuration files copied successfully!
+
 echo.
 echo To debug the executable:
 echo 1. Open Command Prompt
