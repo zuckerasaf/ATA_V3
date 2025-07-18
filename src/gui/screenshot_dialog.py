@@ -90,10 +90,13 @@ class ScreenshotDialog:
         self.selection_canvas = None
         self.mouse_listener = None
         self.overlay_window = None
+        self.ps_original_geometry = None
+        self.tsw_original_geometry = None
         
         # Get dialog configuration
         dialog_config = self.config.get('Screenshot_Dialog', {})
-        
+        # Get time sleep before minimize the window
+        self.time_sleep = self.config.get_time_sleep()
         # Get Print Screen window configuration
         ps_config = self.config.get('Print_Screen_window', {})
         self.default_ps_width = ps_config.get('PSW_width', 1000)
@@ -107,6 +110,8 @@ class ScreenshotDialog:
         self.default_rotation_start = ps_config.get('rotation_start', 0)
         self.default_rotation_end = ps_config.get('rotation_end', 0)
         self.default_rotation_state = ps_config.get('rotation_state', False)
+        self.ps_original_geometry = self.default_ps_width, self.default_ps_height, self.default_ps_x, self.default_ps_y
+        self.tsw_original_geometry = self.default_tsw_width, self.default_tsw_height, self.default_tsw_x, self.default_tsw_y
         
         # Create the dialog window
         self.dialog = tk.Toplevel()
@@ -120,6 +125,9 @@ class ScreenshotDialog:
         x = dialog_config.get('position', {}).get('x', 200)
         y = dialog_config.get('position', {}).get('y', 200)
         self.dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+        # Store original window state for restore functionality
+        self.is_minimized = False
 
                 # --- SCROLLABLE AREA SETUP ---
         container = ttk.Frame(self.dialog)
@@ -250,22 +258,6 @@ class ScreenshotDialog:
         ttk.Entry(ps_frame, textvariable=self.tsw_y_var, width=10).grid(row=1, column=3, padx=5, pady=2)
         
 
-        # # Preview Frame
-        # self.preview_frame = ttk.LabelFrame(scrollable_frame, text="Preview Image", padding="5")
-        # self.preview_frame.pack(fill="x", pady=(0, 10))
-
-        # # Preview Labels
-        # self.image_preview = ttk.Label(self.preview_frame, text="Image Preview")
-        # self.image_preview.pack(side="left", padx=5)
-
-        # # Preview  template Frame
-        # self.preview_template_frame = ttk.LabelFrame(scrollable_frame, text="Preview Template", padding="5")
-        # self.preview_template_frame.pack(fill="x", pady=(0, 10))
-
-        # # Preview Labels template
-        # self.template_preview = ttk.Label(self.preview_template_frame, text="Template Preview")
-        # self.template_preview.pack(side="left", padx=5)
-
 
         # Buttons frame
         button_frame = ttk.Frame(ps_frame)
@@ -278,11 +270,6 @@ class ScreenshotDialog:
         #self.select_area_button = ttk.Button(button_frame, text="Select Area", command=self._start_area_selection)
         self.select_area_button = ttk.Button(button_frame, text="Select Area template", command=lambda: self._handle_area_selection("tsw"))
         self.select_area_button.pack(side="left", padx=5)
-
-        # # Add instruction label
-        # self.instruction_label = ttk.Label(ps_frame, text="", foreground="blue")
-        # self.instruction_label.grid(row=3, column=0, columnspan=4, pady=5)
-
 
 
         # Rotation Testing Options
@@ -305,12 +292,6 @@ class ScreenshotDialog:
         ttk.Entry(range_row, textvariable=self.rotation_end, width=8).pack(side="left", padx=2)
         ttk.Label(range_row, text="degrees").pack(side="left", padx=2)
         
-        # # Rotation step
-        # step_row = ttk.Frame(rotation_frame)
-        # step_row.pack(fill="x", pady=2)
-        # ttk.Label(step_row, text="Step (degrees):").pack(side="left", padx=2)
-        # self.rotation_step = tk.DoubleVar(value=1.0)
-        # ttk.Entry(step_row, textvariable=self.rotation_step, width=8).pack(side="left", padx=2)
         
         # Process Buttons
         check_farme = ttk.Frame(scrollable_frame)
@@ -361,15 +342,27 @@ class ScreenshotDialog:
         ttk.Button(button_frame, text="OK", command=self._on_ok).pack(side="right", padx=5 )
         ttk.Button(button_frame, text="Cancel", command=self._on_cancel).pack(side="right", padx=5)
         
-        time.sleep(1) # wait for the window to be created
-        self._present_image_preview((10, 10, 1000, 800), "ps")
-        self._present_image_preview((50, 50, 900, 700), "tsw")
+        self._minimize_window()
+        # wait for the window to be created
+        time.sleep( self.time_sleep)
+        # Convert (width, height, x, y) to (x1, y1, x2, y2) format
+        ps_width, ps_height, ps_x, ps_y = self.ps_original_geometry
+        ps_coords = (ps_x, ps_y, ps_x + ps_width, ps_y + ps_height)
+        self._present_image_preview(ps_coords, "ps")
+        
+        tsw_width, tsw_height, tsw_x, tsw_y = self.tsw_original_geometry
+        tsw_coords = (tsw_x, tsw_y, tsw_x + tsw_width, tsw_y + tsw_height)
+        self._present_image_preview(tsw_coords, "tsw")
+        self._restore_window()
 
         # Set focus to the dialog window itself instead of any entry
         self.dialog.focus_set()
         
         # Prevent closing the window with the X button
         self.dialog.protocol("WM_DELETE_WINDOW", self._on_cancel)
+        
+        # Store original window state for restore functionality
+
 
     def _handle_area_selection(self, window_type):
         """
@@ -382,9 +375,12 @@ class ScreenshotDialog:
         if not image_name:
             image_name = f"Pic_{self.screenshot_counter:03d}"
         
+        self._minimize_window()
+        # wait for the window to be created
+        time.sleep( self.time_sleep)
         # Call the screen capture function
         result = self.capture_screen_region(image_name, window_type)
-        
+        self._restore_window()
         if result:
             x, y, width, height = result
             if window_type == "ps":
@@ -536,9 +532,9 @@ class ScreenshotDialog:
         """
         Present the image preview.
         """
-
         # Capture the screen
         screenshot = ImageGrab.grab()
+
 
         # Crop to selected region
         x1, y1, x2, y2 = selection_coords
@@ -565,13 +561,19 @@ class ScreenshotDialog:
 
         This function resets the Print Screen or Template Screen window values to their default values.
         """
+        self._minimize_window()
+        # wait for the window to be created
+        time.sleep( self.time_sleep)
         if window_type == "ps":
             self.ps_width_var.set(str(self.default_ps_width))
             self.ps_height_var.set(str(self.default_ps_height))
             self.ps_x_var.set(str(self.default_ps_x))
             self.ps_y_var.set(str(self.default_ps_y))
 
-            self._present_image_preview((10, 10, 1000, 800), "ps")
+            # Convert (width, height, x, y) to (x1, y1, x2, y2) format
+            ps_width, ps_height, ps_x, ps_y= self.ps_original_geometry
+            ps_coords = (ps_x, ps_y, ps_x + ps_width, ps_y + ps_height)
+            self._present_image_preview(ps_coords, "ps")
             # self.image_preview.config(image=None, text="")
             # if hasattr(self.image_preview, 'image'):
             #     self.image_preview.image = None  # Remove reference to the image
@@ -581,12 +583,35 @@ class ScreenshotDialog:
             self.tsw_x_var.set(str(self.default_tsw_x))
             self.tsw_y_var.set(str(self.default_tsw_y))
 
-            self._present_image_preview((50, 50, 900, 700), "tsw")
+            # Convert (width, height, x, y) to (x1, y1, x2, y2) format
+            tsw_width, tsw_height,tsw_x, tsw_y = self.tsw_original_geometry
+            tsw_coords = (tsw_x, tsw_y, tsw_x + tsw_width, tsw_y + tsw_height)
+            self._present_image_preview(tsw_coords, "tsw")
             # self.template_preview.config(image=None, text="")
             # if hasattr(self.template_preview, 'image'):
             #     self.template_preview.image = None  # Remove reference to the template image
-    
+        self._restore_window()
             
+    def _minimize_window(self):
+        """
+        Minimize the dialog window.
+        This function minimizes the dialog window to the taskbar.
+        """
+        
+        self.dialog.iconify()
+        self.is_minimized = True
+
+    def _restore_window(self):
+        """
+        Restore the dialog window to its original size and position.
+        This function restores the dialog window from minimized state to its original geometry.
+        """
+        if self.is_minimized:
+            self.dialog.deiconify()
+            self.dialog.geometry()
+            self.is_minimized = False
+            self.dialog.focus_force()  # Bring window to front and give it focus
+
     def _on_ok(self):
         """
         Handle OK button click.

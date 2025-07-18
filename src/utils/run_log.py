@@ -25,8 +25,17 @@ class RunLog:
     save_to_file(filepath)
         Save the log to a text file.
     """
+    _instance = None  # Class variable for singleton pattern
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(RunLog, cls).__new__(cls)
+            cls._instance.entries = []
+        return cls._instance
+    
     def __init__(self):
-        self.entries = []
+        # No need to initialize entries here since it's done in __new__
+        pass
 
     def add(self, message, level="INFO"):
         """
@@ -68,9 +77,15 @@ class RunLog:
         filepath : str
             The path to the file where the log should be saved.
         """
+        if not self.entries:  # Don't save if no entries
+            return
+            
         with open(filepath, "a", encoding="utf-8") as f:
             f.write("\n")  # Add an empty line before the new log entry
             f.write(self.get_summary())
+        
+        # Clear entries after saving to prevent duplication
+        self.entries.clear()
 
     def erase(self):
         """

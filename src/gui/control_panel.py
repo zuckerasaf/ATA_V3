@@ -186,7 +186,7 @@ class ControlPanel:
         frame.grid(row=0, column=column, padx=5, pady=5, sticky="nsew")
         inner_frame = ttk.Frame(frame)
         inner_frame.pack(fill="both", expand=True)
-        listbox = tk.Listbox(inner_frame, selectmode=tk.EXTENDED)
+        listbox = tk.Listbox(inner_frame, selectmode=tk.EXTENDED, font=("TkDefaultFont", 11))
         v_scrollbar = ttk.Scrollbar(inner_frame, orient="vertical", command=listbox.yview)
         listbox.configure(yscrollcommand=v_scrollbar.set)
         h_scrollbar = ttk.Scrollbar(inner_frame, orient="horizontal", command=listbox.xview)

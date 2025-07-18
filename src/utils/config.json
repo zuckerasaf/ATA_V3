@@ -130,5 +130,6 @@
     "minmumMatchPresent_low": 0,
     "majorFuckup": 0,
     "multiWindow": false,
-    "newParam": "blabla"
+    "newParam": "blabla",
+    "time_sleep": 0.3
 } 

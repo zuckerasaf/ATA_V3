@@ -286,7 +286,7 @@ class EventListener:
 
         event = None  # <-- Initialize event to None
         try: # the "try" part deal with all the NOT speaceial keys tha one that got valid {key.char}
-           event = Event(
+            event = Event(
                 counter=self.counter,
                 time=time_total,
                 neto_time=neto_time,
@@ -337,21 +337,21 @@ class EventListener:
                     time_in_dialog = dialog_end_time - dialog_start_time
                     
                     time.sleep(0.1)  # 100ms delay for close the snapshot window 
-                    # Only proceed if user clicked OK
-                    event.pic_width = dialog.result['ps_width']
-                    event.pic_height = dialog.result['ps_height']
-                    event.pic_x = dialog.result['ps_x']
-                    event.pic_y = dialog.result['ps_y']
-                    event.pic_template_width = dialog.result['tsw_width']
-                    event.pic_template_height = dialog.result['tsw_height']
-                    event.pic_template_x = dialog.result['tsw_x']
-                    event.pic_template_y = dialog.result['tsw_y']
-                    event.pic_rotation_start = dialog.result['rotation_start']
-                    event.pic_rotation_end = dialog.result['rotation_end']
-                    event.pic_rotation_state = dialog.result['rotation_state']
-
-
+                    
+                    # Only proceed if user clicked OK (not Cancel)
                     if dialog.result:
+                        # Set event properties from dialog result
+                        event.pic_width = dialog.result['ps_width']
+                        event.pic_height = dialog.result['ps_height']
+                        event.pic_x = dialog.result['ps_x']
+                        event.pic_y = dialog.result['ps_y']
+                        event.pic_template_width = dialog.result['tsw_width']
+                        event.pic_template_height = dialog.result['tsw_height']
+                        event.pic_template_x = dialog.result['tsw_x']
+                        event.pic_template_y = dialog.result['tsw_y']
+                        event.pic_rotation_start = dialog.result['rotation_start']
+                        event.pic_rotation_end = dialog.result['rotation_end']
+                        event.pic_rotation_state = dialog.result['rotation_state']
                         #Add a small delay to allow the window to update
                         time.sleep(0.1)  # 100ms delay
                         screenshot = capture_screen(event.pic_x, event.pic_y, event.pic_width, event.pic_height) # capture the screen

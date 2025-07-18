@@ -23,7 +23,7 @@ REM Create spec file
 echo Creating spec file...
 pyi-makespec ^
     --onefile ^
-    --icon "ATA.ico" ^
+    --icon "%CD%\ATA.ico" ^
     --add-data "src\utils\config.json;utils" ^
     --add-data "src\Doc\Doc_config.json;Doc" ^
     --hidden-import=tkinter ^

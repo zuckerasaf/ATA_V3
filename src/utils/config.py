@@ -205,4 +205,6 @@ class Config:
         position = self.get('Comment_Panel.CSW_position', {'x': 20, 'y': 20})
         return (width, height, position)
 
-    
+    def get_time_sleep(self) -> float:
+        """Get the time sleep."""
+        return self.get('time_sleep', 0.2)
