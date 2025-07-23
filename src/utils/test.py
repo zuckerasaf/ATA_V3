@@ -29,7 +29,7 @@ class CompactJSONEncoder(json.JSONEncoder):
             return super().encode(obj)
 
 class Test:
-    def __init__(self, config: str = "", comment1: str = "", comment2: str = "", accuracy_level: int = 5, starting_point: str = "none", numOfSteps: int = 0, stepResult: list = None, total_time_in_screenshot_dialog: int = 0):
+    def __init__(self, config: str = "", comment1: str = "", comment2: str = "", accuracy_level: float = 0.8, starting_point: str = "none", numOfSteps: int = 0, stepResult: list = None, total_time_in_screenshot_dialog: int = 0, save: bool = True):
         """
         Initialize a new Test instance.
         
@@ -37,7 +37,7 @@ class Test:
             config (str): Configuration string for the test
             comment1 (str): First comment for the test
             comment2 (str): Second comment for the test
-            accuracy_level (int): Accuracy level between 1-10 (default: 5)
+            accuracy_level (float): Accuracy level between 0.5 and 1 (default: 0.8)
             starting_point (str): Starting point for the test (default: "none")
             numOfSteps (int): Number of steps in the test (default: 0)
             stepResult (list): List to store step results (default: empty list)
@@ -46,15 +46,17 @@ class Test:
         self.config = config
         self.comment1 = comment1
         self.comment2 = comment2
+        self.accuracy_level = accuracy_level
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.numOfSteps = numOfSteps
         self.stepResult = stepResult if stepResult is not None else []
         self.total_time_in_screenshot_dialog = total_time_in_screenshot_dialog
+        self.save = save
         
         # Validate and set accuracy level
-        if not isinstance(accuracy_level, int) or accuracy_level < 1 or accuracy_level > 10:
-            raise ValueError("Accuracy level must be an integer between 1 and 10")
-        self.accuracy_level = accuracy_level
+        # if not isinstance(accuracy_level, int) or accuracy_level < 1 or accuracy_level > 10:
+        #     raise ValueError("Accuracy level must be an integer between 1 and 10")
+        # self.accuracy_level = accuracy_level
         
         # Read valid starting points from config.json
         config = Config()
@@ -123,18 +125,18 @@ class Test:
         """
         return (self.comment1, self.comment2)
         
-    def set_accuracy_level(self, level: int) -> None:
+    def set_accuracy_level(self, level: float) -> None:
         """
         Set the accuracy level.
         
         Args:
-            level (int): Accuracy level between 1-10
+            level (float): Accuracy level between 0.5 and 1
             
         Raises:
-            ValueError: If level is not between 1 and 10
+            ValueError: If level is not between 0.5 and 1
         """
-        if not isinstance(level, int) or level < 1 or level > 10:
-            raise ValueError("Accuracy level must be an integer between 1 and 10")
+        if not isinstance(level, float) or level < 0.5 or level > 1:
+            raise ValueError("Accuracy level must be a float between 0.5 and 1")
         self.accuracy_level = level
         
     def get_accuracy_level(self) -> int:

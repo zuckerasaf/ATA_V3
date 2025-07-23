@@ -123,11 +123,12 @@
         "rotation_end": 30,
         "rotation_step": 1,
         "match_algorithm": ["TM_CCOEFF_NORMED", "TM_CCORR_NORMED", "TM_SQDIFF_NORMED"],
-        "distance_error": 0.1
+        "distance_error": 0.1,
+        "use_match_percentage_ref": true
     },
-    "minmumMatchPresent_high": 80,
+    "minmumMatchPresent_high": 70,
     "minmumMatchPresent_medium": 50,
-    "minmumMatchPresent_low": 0,
+    "minmumMatchPresent_low": 30,
     "majorFuckup": 0,
     "multiWindow": false,
     "newParam": "blabla",

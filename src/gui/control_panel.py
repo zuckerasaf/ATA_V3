@@ -267,6 +267,9 @@ class ControlPanel:
         # Prevent text editing but allow selection
         self.status_text.bind("<Key>", lambda e: "break")
         self.status_text.bind("<Button-3>", lambda e: "break")  # Disable right-click menu
+        
+        # Set initial scroll position to bottom
+        self.status_text.see("end")
 
         # Vertical scrollbar
         v_scrollbar = ttk.Scrollbar(inner_frame, orient="vertical", command=self.status_text.yview)
@@ -323,6 +326,8 @@ class ControlPanel:
                 self.status_text.delete("1.0", tk.END)
                 self.status_text.insert("1.0", message)
                 self.status_text.config(state="normal")  # Keep it editable for selection
+                # Scroll to bottom to show the latest content
+                self.status_text.see("end")
         except Exception as e:
             print(f"Error setting status: {e}")
             # If we can't update the status text, just print the message
@@ -498,6 +503,8 @@ class ControlPanel:
             test_name = test_data['name']
             starting_point = test_data['starting_point']
             precondition = test_data['precondition']
+            accuracy_level = test_data['accuracy_level']
+            description = test_data['description']
 
             print(f"Starting recording with test name: {test_name}")  # Debug print
             
@@ -533,7 +540,7 @@ class ControlPanel:
                 # Start recording with the specified test name and starting point
                 # The start_recording function will handle its own window management
                 # and will call cleanup_and_restart when done, which will restart the control panel
-                start_recording(test_name, starting_point, precondition)
+                start_recording(test_name, starting_point, description, precondition, accuracy_level)
             except Exception as e:
                 print(f"Error during recording: {e}")
                 # Show the control panel window in case of error
@@ -901,6 +908,19 @@ class ControlPanel:
                         if sys.platform == 'win32':
                             # Open the result image
                             os.startfile(image_path)
+                            test_path=self.config.get('paths', {}).get('test_path', "Test")
+                            try:
+                                if "Result" in image_path:
+                                    test_folder =image_path.split("\\")[5].split("_")[2]
+                                    picture_name=image_path.split("\\")[6].removesuffix("_Match_Result.jpg")+"_Template.jpg"
+                                    template_path=os.path.join(test_path, test_folder, picture_name)
+                                    os.startfile(template_path)
+                                else:
+                                    template_path = image_path.removesuffix("_Match.jpg")+"_Template.jpg"
+                                    os.startfile(template_path)
+                            except Exception as e:
+                                    messagebox.showerror("Error", f"An error occurred while try to open the template image : {str(e)}")
+
                             # # Try to open the corresponding diff image
                             # diff_path = image_path.replace("_Result.jpg", "_gray.jpg")
                             # if os.path.exists(diff_path):

@@ -6,7 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('src\\utils\\config.json', 'utils'), ('src\\Doc\\Doc_config.json', 'Doc')],
-    hiddenimports=['tkinter', 'PIL', 'PIL.Image', 'PIL.ImageTk', 'PIL.ImageFont', 'PIL.ImageDraw'],
+    hiddenimports=['tkinter', 'PIL', 'PIL.Image', 'PIL.ImageTk', 'PIL.ImageFont', 'PIL.ImageDraw', 'PIL.ImageGrab', 'cv2', 'numpy', 'pynput', 'pynput.mouse', 'pynput.keyboard', 'docx', 'docx.shared', 'docx.oxml', 'docx.oxml.ns', 'psutil', 'pyautogui', 'webbrowser', 'selenium', 'requests', 'tempfile', 'shutil', 'atexit', 'threading', 'queue', 'base64', 'io', 'math', 'datetime', 'json', 'os', 'sys', 'time', 'random', 'string', 'subprocess', 'typing', 'typing.Dict', 'typing.Any', 'typing.List'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['C:\\projectPython\\ATA_V3\\ATA.ico'],
 )

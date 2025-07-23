@@ -106,7 +106,7 @@ class EventListener:
         Handle mouse scroll events.
     """
 
-    def __init__(self, event_window, test_name=None, starting_point="none", precondition="nothing for now"):
+    def __init__(self, event_window, test_name=None, starting_point="none", description="nothing for now", precondition="nothing for now", accuracylevel=0.8):
         """
         Initialize the EventListener with the given event window and test name.
 
@@ -141,9 +141,10 @@ class EventListener:
         
         # Create a new test instance
         self.current_test = Test(
+            accuracy_level=accuracylevel,
             config= precondition,
             comment1=f"Test: {test_name}" if test_name else "Test started",
-            comment2=f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            comment2=description,
             starting_point=starting_point,
             total_time_in_screenshot_dialog=0
         )
@@ -159,6 +160,9 @@ class EventListener:
         y : int
             The y-coordinate of the mouse.
         """
+        if self.save == False:
+            return
+
         if self.last_press_position is not None:
             current_time = int(time.time() * 1000)
             self.drag_positions.append((x, y))
@@ -186,7 +190,8 @@ class EventListener:
         """
         if not self.running:
             return False
-            
+        if self.current_test.save == False:
+            return   
         # Check if we should track this type of event
         if pressed and not config.should_track_mouse_press():
             return True
@@ -255,7 +260,9 @@ class EventListener:
                 'times': self.drag_times
             })
 
-        if self.save == True :
+        ##print(f"save is {self.current_test.save}")
+
+        if self.current_test.save == True :
             # Add event to current test
             self.current_test.add_event(event)
             
@@ -278,6 +285,9 @@ class EventListener:
         bool
             True if the event should be tracked, False otherwise.
         """
+        if self.current_test.save == False:
+            return
+        
         self.counter += 1
         current_time = int(time.time() * 1000)
         time_total = current_time - self.start_time
@@ -322,8 +332,11 @@ class EventListener:
                 
                 if key.name == self.print_screen_key:
                     #event.event_type="keyboard - snapshot command"
-                    self.save = False # stop the saving of the listener data while deal with the snapshot 
+                    self.current_test.save = False # stop the saving of the listener data while deal with the snapshot 
+                    #print(f"save is {self.save}")
+                    self.event_window.update_event(event,"processing")
                     print("\nPrint screen key pressed...")
+                    best_high_res_confidence = []
                     
                     # Start timing the dialog
                     dialog_start_time = int(time.time() * 1000)
@@ -340,6 +353,7 @@ class EventListener:
                     
                     # Only proceed if user clicked OK (not Cancel)
                     if dialog.result:
+                        event.time_from_last = 100
                         # Set event properties from dialog result
                         event.pic_width = dialog.result['ps_width']
                         event.pic_height = dialog.result['ps_height']
@@ -377,7 +391,11 @@ class EventListener:
                                 event.pic_path =  save_screenshot(screenshot, screenshot_path)
                                 event.pic_template_path =  save_screenshot(templateshot, template_path)
                                 image_compare_config = config.get_Image_compare_config()
-                                threshold = image_compare_config.get("threshold", 0.8)
+                                # if the accuracy level is define by the user and it is an integer and greater than 0, use the accuracy level to calculate the threshold
+                                if self.current_test.accuracy_level > 0:
+                                    threshold = min(self.current_test.accuracy_level, 1.0)
+                                else:
+                                    threshold = image_compare_config.get("threshold", 0.8)
                                 method = image_compare_config.get("match_algorithm", 0)
                                 succsess, result_image, all_high_res_results, best_high_res_confidence, best_high_res_location= find_image(template_path, screenshot_path,threshold, method, rotation_start=event.pic_rotation_start, rotation_end=event.pic_rotation_end)
                                 cv2.imwrite(Match_path, result_image)
@@ -394,26 +412,37 @@ class EventListener:
                                 event.pic_template_name = dialog.result['image_name']+"_Template"
                                 self.current_test.total_time_in_screenshot_dialog += time_in_dialog
 
-                                
                                 run_log.add(str(Match_path), level="IMAGE")
                                 run_log.add("screenshot taken with name " + dialog.result['image_name'], level="INFO")       
-                    self.save = True
+                    if len(best_high_res_confidence)<1:
+                        self.current_test.save = False
+                    else:
+                        self.current_test.save = True
+                        self.current_test.add_event(event)   
+                        self.event_window.update_event(event,"recording")
+                        
             
 
                 if key.name == self.comment_key:
-                    self.save = False # stop the saving of the listener data while deal with the comment
+                    self.current_test.save = False # stop the saving of the listener data while deal with the comment
                     print("\nComment key pressed...")
                     dialog = CommentDialog()
                     dialog.dialog.wait_window()
                     event.step_desc = dialog.result
-                    self.save = True
+                    self.current_test.save = True
+                    if self.current_test.save == True and event is not None:        
+                        self.current_test.add_event(event)
+                        self.event_window.update_event(event)
 
                 if key.name == self.quit_key:
 
                     print("\nStopping event listener...")
                     self.running = False
                     self.current_test.add_event(event)  # Add event to current test
-                    self.event_window.update_event(event) # Update the floating window
+                    if self.current_test.save == True and event is not None:        
+                        self.current_test.add_event(event)
+                        self.event_window.update_event(event)
+                    #self.event_window.update_event(event) # Update the floating window
 
                     # Save the test data using the imported save_test function
                     filepath = save_test(self.current_test, self.test_name, "recording")
@@ -426,10 +455,10 @@ class EventListener:
                     self.event_window.after(0, lambda: cleanup_and_restart(self.event_window))
                     return False
             else:
-                self.save = True  
-        if self.save == True and event is not None:        # <-- Only use event if it was assigned
-            self.current_test.add_event(event)
-            self.event_window.update_event(event)
+                self.current_test.save = True  
+        # if self.save == True and event is not None:        # <-- Only use event if it was assigned
+        #     self.current_test.add_event(event)
+        #     self.event_window.update_event(event)
         self.last_event_time = neto_time
 
     def on_scroll(self, x, y, dx, dy):
@@ -457,6 +486,9 @@ class EventListener:
             
         if not config.should_track_mouse_scroll():
             return True
+        
+        if self.save == False:
+            return
             
         self.counter += 1
         current_time = int(time.time() * 1000)
@@ -493,7 +525,7 @@ class EventListener:
             self.event_window.update_event(event)
             self.last_event_time = neto_time
 
-def main(test_name=None, starting_point="none", precondition="nothing for now"):
+def main(test_name=None, starting_point="none",description="nothing for now", precondition="nothing for now", accuracylevel=0.8):
     """
     Main function to start the test recording process.
 
@@ -527,7 +559,7 @@ def main(test_name=None, starting_point="none", precondition="nothing for now"):
     event_window = EventWindow(test_name=test_name, run_number=1, run_total=1)
     
     # Create the event listener
-    listener = EventListener(event_window, test_name, starting_point, precondition)
+    listener = EventListener(event_window, test_name, starting_point, description, precondition, accuracylevel)
     
     # Start the mouse listener
     mouse_listener = mouse.Listener(

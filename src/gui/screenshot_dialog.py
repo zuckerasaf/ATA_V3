@@ -162,7 +162,11 @@ class ScreenshotDialog:
         priority_frame = ttk.Frame(scrollable_frame)
         priority_frame.pack(fill="x", pady=(0, 10), padx=5)
         
-        priorities = ["low", "medium", "high"]
+
+        low = "low - " + str(self.config.get("minmumMatchPresent_low", 30)) + "%"
+        medium = "medium - " + str(self.config.get("minmumMatchPresent_medium", 50)) + "%"
+        high = "high - " + str(self.config.get("minmumMatchPresent_high", 70)) + "%"
+        priorities = [low, medium, high]
         for priority in priorities:
             ttk.Radiobutton(
                 priority_frame,

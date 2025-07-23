@@ -152,7 +152,8 @@ class TestRunner:
         self.current_test = Test(
             config=f"{test.config}",
             comment1=f"Test: {test.comment1}",
-            comment2=f"Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            comment2=f"{test.comment2}",
+            accuracy_level=test.accuracy_level,
             starting_point=test.starting_point,
             numOfSteps=0,
             stepResult=[]
@@ -283,8 +284,9 @@ class TestRunner:
         try:
             self.counter += 1
             current_time = int(time.time() * 1000)
-            time_diff = current_time - self.last_event_time
             time_total = current_time - self.start_time
+            time_diff = current_time - self.last_event_time
+            
             
             resevent = self._create_event(event, time_total, time_diff)
 
@@ -351,7 +353,7 @@ class TestRunner:
                     time.sleep(0.1)  # Increased delay for more stability
                     self.mouse_controller.release(button)
             
-            if self.save == True:
+            if self.current_test.save == True:
                 # Add event to current test
                 self.current_test.add_event(resevent)
                 
@@ -426,7 +428,7 @@ class TestRunner:
                     
  
                     image_compare_config = config.get_Image_compare_config()
-                    threshold = image_compare_config.get("threshold", 0.8)
+                    threshold = self.test.accuracy_level
                     method = image_compare_config.get("match_algorithm", 0)
                     succsess, result_image, all_high_res_results, best_high_res_confidence, best_high_res_location= find_image(event.pic_template_path, screenshot_path,threshold, method, resevent.pic_rotation_start, resevent.pic_rotation_end)
                     resevent.pic_template_loc_x = best_high_res_location[0][0]
@@ -435,9 +437,12 @@ class TestRunner:
                     cv2.imwrite(Match_path, result_image)
                     resevent.step_resau = "match percentage is "+str(best_high_res_confidence)
                     match_percentage = int(best_high_res_confidence[0]*100)
-                    if resevent.priority == "high":
+
+                    # if the use_match_percentage_ref is true, use the match percentage to determine the pass criteria, it it false event 0 match will not stop the test 
+                    use_match_percentage_ref = image_compare_config.get("use_match_percentage_ref", True)
+                    if resevent.priority == "high" and use_match_percentage_ref :
                         match_percentage_ref = config.get("minmumMatchPresent_high")
-                    elif resevent.priority == "medium":
+                    elif resevent.priority == "medium" and use_match_percentage_ref:
                         match_percentage_ref = config.get("minmumMatchPresent_medium")
                     else:
                         match_percentage_ref = config.get("minmumMatchPresent_low")
@@ -445,7 +450,7 @@ class TestRunner:
                     distance = math.hypot(best_high_res_location[0][0] - event.pic_template_loc_x, best_high_res_location[0][1] - event.pic_template_loc_y)
                     distance_error = image_compare_config.get("distance_error", 0.1)
 
-                    pass_criteria = 100-self.current_test.accuracy_level*5
+                    pass_criteria = threshold*100
                     if match_percentage< int(pass_criteria):
                         resevent.step_resau = " failed, grade is " + str(match_percentage) + " < " + str(pass_criteria)
                         status="failed"
@@ -459,7 +464,7 @@ class TestRunner:
 
                     self.current_test.numOfSteps += 1
                     self.current_test.stepResult.append(["step -" + str(event.screenshot_counter),status])  
-                    self.current_test.comment2 = match_percentage
+                    #elf.current_test.comment2 = match_percentage
                     self.save = True # Resume saving events    
                     if self.event_window:
                         self.event_window.update_event(resevent)
@@ -604,6 +609,7 @@ class TestRunner:
                 try:
                     # Wait for the specified time between events
                     if event.time_from_last > 0:
+                        print(f"waiting for {event.time_from_last} ms")
                         time.sleep(event.time_from_last / 1000)  # Convert ms to seconds
                     # Execute based on event type
                     current_time = int(time.time() * 1000)

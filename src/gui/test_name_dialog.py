@@ -69,7 +69,7 @@ class TestNameDialog:
         
         # Accuracy Level Section
         ttk.Label(main_frame, text="Accuracy Level:").pack(anchor="w", pady=(0, 5))
-        self.accuracy_var = tk.IntVar(value=5)
+        self.accuracy_var = tk.IntVar(value=6)
         accuracy_frame = ttk.Frame(main_frame)
         accuracy_frame.pack(fill="x", pady=(0, 10))
 
@@ -103,7 +103,7 @@ class TestNameDialog:
         accuracy_scale.pack(side="left", fill="x", expand=True, padx=5)
         ttk.Label(accuracy_frame, text="High").pack(side="left")
         
-        self.accuracy_label = ttk.Label(accuracy_frame, text="5")
+        self.accuracy_label = ttk.Label(accuracy_frame, text="80%")
         self.accuracy_label.pack(side="left", padx=5)
         
         # Starting Point Section
@@ -137,7 +137,8 @@ class TestNameDialog:
         
     def update_accuracy_label(self, *args):
         """Update the accuracy level label when the slider changes."""
-        self.accuracy_label.config(text=str(self.accuracy_var.get()))
+        accuracy_number = 50+(self.accuracy_var.get()*5)
+        self.accuracy_label.config(text=str(accuracy_number)+"%")
     
     def _on_ok(self):
         """Handle OK button click."""
@@ -166,9 +167,10 @@ class TestNameDialog:
         self.result = {
             'name': name,
             'purpose': self.purpose_var.get().strip(),
-            'accuracy_level': self.accuracy_var.get(),
+            'accuracy_level': (50 +(self.accuracy_var.get()*5))/100,
             'starting_point': self.starting_point_var.get(),
-            'precondition': self.precondition_text.get(1.0, tk.END).strip()
+            'precondition': self.precondition_text.get(1.0, tk.END).strip(),
+            'description': self.purpose_var.get()
         }
         print(f"Dialog result: {self.result}")  # Debug print
         self.dialog.destroy()

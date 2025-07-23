@@ -85,9 +85,9 @@ def add_system_info_section(doc, config):
     # Add each software component
     for sw_key, sw_info in software.items():
         doc.add_paragraph(f"{sw_info.get('name', '')}:")
-        doc.add_paragraph(f"  Version: {sw_info.get('version', '')}")
+        doc.add_paragraph(f"\tVersion: {sw_info.get('version', '')}")
         if sw_info.get('comment') and sw_info.get('comment') != '_':
-            doc.add_paragraph(f"  Comment: {sw_info.get('comment', '')}")
+            doc.add_paragraph(f"\tComment: {sw_info.get('comment', '')}")
     
     # Hardware Information
     doc.add_heading("Hardware", level=2)
@@ -97,9 +97,9 @@ def add_system_info_section(doc, config):
     for pc_key, pc_info in hardware.items():
         doc.add_paragraph(f"{pc_info.get('name', '')}:")
         if pc_info.get('comment_1') and pc_info.get('comment_1') != '_':
-            doc.add_paragraph(f"  {pc_info.get('comment_1', '')}")
+            doc.add_paragraph(f"\t{pc_info.get('comment_1', '')}")
         if pc_info.get('comment_2') and pc_info.get('comment_2') != '_':
-            doc.add_paragraph(f"  {pc_info.get('comment_2', '')}")
+            doc.add_paragraph(f"\t{pc_info.get('comment_2', '')}")
 
 def add_environment_section(doc, config):
     """
@@ -124,8 +124,8 @@ def add_environment_section(doc, config):
     # Add each parameter set
     for param_key, param_info in env.items():
         doc.add_heading(param_info.get('name', param_key), level=2)
-        doc.add_paragraph(f"Type: {param_info.get('type', '')}")
-        doc.add_paragraph(f"Location: {param_info.get('location', '')}")
+        doc.add_paragraph(f"\tType: {param_info.get('type', '')}")
+        doc.add_paragraph(f"\tLocation: {param_info.get('location', '')}")
 
 def apply_document_settings(doc, config):
     """
@@ -236,8 +236,8 @@ def create_doc_from_json(json_path_list, pictures=True, Type="ATP", Regular_doc_
             doc.add_heading("TestData", level=2)
             doc.add_paragraph(f"Description: {data.get('comment2', '')}")
             doc.add_paragraph(f"Starting Point: {data.get('starting_point', '')}")
-            acuuracy_value =100 - (data.get('accuracy_level', '') *5)
-            doc.add_paragraph(f"The pass criteria is {acuuracy_value}% , the accuracy level is {data.get('accuracy_level', '')}")
+            acuuracy_value =(data.get('accuracy_level', '') *100)
+            doc.add_paragraph(f"The pass criteria is {acuuracy_value}%")
             doc.add_paragraph(f"Timestamp: {data.get('timestamp', '')}")
 
             doc.add_heading("Test precondition", level=2)    

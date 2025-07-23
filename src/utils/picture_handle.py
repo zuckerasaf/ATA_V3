@@ -17,7 +17,7 @@ import cv2
 import numpy as np
 from src.utils.config import Config
 from datetime import datetime
-
+import time
 config = Config()
 
 # Define project root path
@@ -26,18 +26,15 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 def capture_screen(x, y, width, height):
     """
     Capture a screenshot of a specific region of the screen.
-    
-    This function captures a rectangular region of the screen based on the provided
-    coordinates and dimensions. It uses PIL's ImageGrab for the actual capture.
-    
+
     Args:
-        x (int): X-coordinate of the top-left corner
-        y (int): Y-coordinate of the top-left corner
-        width (int): Width of the capture region
-        height (int): Height of the capture region
-    
+        x (int): X-coordinate of the top-left corner.
+        y (int): Y-coordinate of the top-left corner.
+        width (int): Width of the capture region.
+        height (int): Height of the capture region.
+
     Returns:
-        PIL.Image: The captured screenshot, or None if capture fails
+        PIL.Image: The captured screenshot, or None if capture fails.
     """
     try:
         # Capture the screen with configured dimensions and position
@@ -51,20 +48,16 @@ def capture_screen(x, y, width, height):
 def generate_screenshot_filename(test_name, counter, image_name, state, result_folder_path):
     """
     Generate a filename for a screenshot based on test context and state.
-    
-    This function creates appropriate filenames for screenshots based on whether
-    they are being taken during test recording or result comparison. It handles
-    both test and result directory structures.
-    
+
     Args:
-        test_name (str): Name of the test
-        counter (int): Screenshot counter number
-        image_name (str): Name to use for the image
-        state (str): Current state ("Recording" or "Result")
-        result_folder_path (str): Path to the result folder when in result state
-        
+        test_name (str): Name of the test.
+        counter (int): Screenshot counter number.
+        image_name (str): Name to use for the image.
+        state (str): Current state ("Recording" or "Result").
+        result_folder_path (str): Path to the result folder when in result state.
+
     Returns:
-        tuple: (filename, full_path) or (None, None) if generation fails
+        tuple: (filename, full_path) or (None, None) if generation fails.
     """
     try:
         if not test_name:
@@ -96,42 +89,30 @@ def generate_screenshot_filename(test_name, counter, image_name, state, result_f
         return None, None
 
 def debug_print(debug, debug_log, *args, **kwargs):
-    """Helper function to print to both console and debug log"""
+    """
+    Print to both console and debug log if enabled.
+
+    Args:
+        debug (bool): Whether debug mode is enabled.
+        debug_log (file): Debug log file object.
+        *args: Arguments to print.
+        **kwargs: Keyword arguments to print.
+    """
     print(*args, **kwargs)
     if debug and debug_log:
         debug_log.write(" ".join(str(arg) for arg in args) + "\n")
 
 def compare_images(source, target, result_folder):
     """
-    Compare two images and generate a visual difference map with detailed analysis.
-    
-    This function performs a comprehensive comparison between source and target images:
-    1. Position Matching:
-       - Uses template matching to find the target image within the source
-       - Applies configurable position tolerance
-       - Trims images to matched regions for accurate comparison
-    
-    2. Pixel Analysis:
-       - Converts images to grayscale for comparison
-       - Calculates absolute difference between images
-       - Applies threshold to identify significant differences
-       - Generates difference visualization
-    
-    3. Debug Features (when enabled):
-       - Saves intermediate images (grayscale, difference, threshold)
-       - Creates detailed debug log with pixel statistics
-       - Generates visual difference map
-       - Provides percentage match calculation
-    
+    Compare two images and generate a visual difference map with analysis.
+
     Args:
-        source (str): Path to the source (reference) image
-        target (str): Path to the target (test) image to compare against source
-        result_folder (str): Directory to save comparison results and debug outputs
-        
+        source (str): Path to the source (reference) image.
+        target (str): Path to the target (test) image.
+        result_folder (str): Directory to save comparison results and debug outputs.
+
     Returns:
-        tuple: (match_percentage, result_image_path)
-            - match_percentage (int): Percentage of matching pixels (0-100)
-            - result_image_path (str): Path to the generated difference visualization
+        tuple: (match_percentage (int), result_image_path (str)).
     """
     config = Config()
     image_compare_config = config.get('Image_compare', {})
@@ -269,30 +250,17 @@ def compare_images(source, target, result_folder):
 
 def find_image_offset(source_gray, target_gray, result_folder=None, debug=False, target_name=None):
     """
-    Find if target image exists within source image and calculate its offset.
-    
-    This function uses template matching to find if the target image exists within
-    the source image, accounting for potential position differences. It includes:
-    - Edge trimming to improve matching
-    - Confidence scoring
-    - Debug visualization
-    - Position offset calculation
-    - Extraction of matching region from source image
-    
+    Find if target image exists within source image and calculate its offset using template matching.
+
     Args:
-        source_gray (numpy.ndarray): Grayscale source image
-        target_gray (numpy.ndarray): Grayscale target image to find
-        result_folder (str, optional): Folder to save debug visualization
-        debug (bool): If True, saves visualization of the match
-        target_name (str, optional): Name of the target image for debug files
-        
+        source_gray (numpy.ndarray): Grayscale source image.
+        target_gray (numpy.ndarray): Grayscale target image to find.
+        result_folder (str, optional): Folder to save debug visualization.
+        debug (bool): If True, saves visualization of the match.
+        target_name (str, optional): Name of the target image for debug files.
+
     Returns:
-        tuple: (found, offset_x, offset_y, match_confidence, matched_region)
-            - found (bool): True if target was found in source
-            - offset_x (int): X coordinate of the match
-            - offset_y (int): Y coordinate of the match
-            - match_confidence (float): Confidence of the match (0-1)
-            - matched_region (numpy.ndarray): The region from source image that matches the trimmed target
+        tuple: (found (bool), offset_x (int), offset_y (int), w (int), h (int), match_confidence (float), matched_region (numpy.ndarray or None)).
     """
     debug_log_path = os.path.join(result_folder, f"{target_name}_debug_log.txt")
     debug_log = open(debug_log_path, 'a', encoding='utf-8')
@@ -396,16 +364,14 @@ def find_image_offset(source_gray, target_gray, result_folder=None, debug=False,
 
 def save_screenshot(screenshot, filepath: str) -> None:
     """
-    Save a screenshot to disk.
-    
-    This function saves a PIL Image object to the specified filepath in JPEG format.
-    
+    Save a screenshot to disk as JPEG.
+
     Args:
-        screenshot (PIL.Image): The screenshot to save
-        filepath (str): The path where the screenshot should be saved
-        
+        screenshot (PIL.Image): The screenshot to save.
+        filepath (str): The path where the screenshot should be saved.
+
     Returns:
-        str: The filepath where the screenshot was saved, or None if save fails
+        str: The filepath where the screenshot was saved, or None if save fails.
     """
     if screenshot:
         screenshot.save(filepath, 'JPEG')
@@ -413,17 +379,22 @@ def save_screenshot(screenshot, filepath: str) -> None:
     
 def find_image(template_path, image_path, threshold=0.8, method=0, rotation_start=0, rotation_end=0, rotation_step=0):
     """
-    Find a template image within a larger image.
-    
+    Find a template image within a larger image using multi-scale and rotation-aware matching.
+
     Args:
-        template_path (str): Path to the template image
-        image_path (str): Path to the larger image
-        threshold (float): Matching threshold (0-1)
-        method: OpenCV template matching method
-    
+        template_path (str): Path to the template image.
+        image_path (str): Path to the larger image.
+        threshold (float): Matching threshold (0-1).
+        method (int): OpenCV template matching method.
+        rotation_start (int): Start angle for rotation search.
+        rotation_end (int): End angle for rotation search.
+        rotation_step (int): Step size for rotation search.
+
     Returns:
-        tuple: (success, result_image, matches, confidences, locations)
+        tuple: (success (bool), result_image (numpy.ndarray or None), matches (list), confidences (list), locations (list)).
     """
+    current_time = time.time()
+    print(f"enter the find_image function current_time is {current_time}")
     if method == 0:
         method = cv2.TM_CCOEFF_NORMED
     elif method == 1:
@@ -482,6 +453,8 @@ def find_image(template_path, image_path, threshold=0.8, method=0, rotation_star
         points_cleaned = remove_duplicate_points(points)
         print(f"Points cleaned: {points_cleaned}")
         # For each low-res point, search in the corresponding high-res region
+        current_time = time.time()
+        print(f"enter the high-resolution search function current_time is {current_time}")
         for i, (low_x, low_y) in enumerate(points_cleaned):
             
             # Convert to high-res coordinates
@@ -499,8 +472,17 @@ def find_image(template_path, image_path, threshold=0.8, method=0, rotation_star
             if search_region.size == 0:
                 print(f"Warning: Empty search region for point {i}")
                 continue
+            if rotation_start != rotation_end:
+                angles = np.arange(rotation_start, rotation_end, rotation_step)
+            else:
+                angles = [rotation_start]
             
-            angles = np.arange(best_angle_lowR-10, best_angle_lowR+10, 1)
+            # if the rotation_start is not equal to the rotation_end, then the angles is the range of the rotation_start and rotation_end
+            # if the rotation_start is equal to the rotation_end, then the angles is the rotation_start
+            # if the rotation_step is 0, then the angles is the rotation_start
+            # if the rotation_step is not 0, then the angles is the range of the rotation_start and rotation_end
+            # if the rotation_step is not 0, then the angles is the range of the rotation_start and rotation_end
+            
             for angle in angles:
                
                 # print(f"Processing angle in high-res: {angle} region {i}")
@@ -558,7 +540,20 @@ def find_image(template_path, image_path, threshold=0.8, method=0, rotation_star
 
 def create_result_image(image, best_confidence, threshold, method, locations, best_angle=0, w=0, h=0):
     """
-    Create a result image with the template image and the result image.
+    Create a result image with rectangles and info overlays for template matching results.
+
+    Args:
+        image (numpy.ndarray): The main image.
+        best_confidence (float): Best match confidence.
+        threshold (float): Matching threshold.
+        method (int): OpenCV template matching method.
+        locations (tuple): Location of the best match.
+        best_angle (float, optional): Angle of best match.
+        w (int, optional): Width of the template.
+        h (int, optional): Height of the template.
+
+    Returns:
+        numpy.ndarray: Annotated result image.
     """
     # Create a copy of the image for drawing
     result_image = image.copy()
@@ -590,6 +585,20 @@ def create_result_image(image, best_confidence, threshold, method, locations, be
     return result_image
 
 def draw_text_with_background(img, text, org, font, font_scale, color, thickness, bg_color=(255,255,255), alpha=0.5):
+    """
+    Draw text with a background rectangle on an image.
+
+    Args:
+        img (numpy.ndarray): Image to draw on.
+        text (str): Text to draw.
+        org (tuple): Origin (x, y) for the text.
+        font: OpenCV font type.
+        font_scale (float): Font scale.
+        color (tuple): Text color (B, G, R).
+        thickness (int): Text thickness.
+        bg_color (tuple, optional): Background color (B, G, R).
+        alpha (float, optional): Background transparency.
+    """
     # Get the text size
     (text_w, text_h), baseline = cv2.getTextSize(text, font, font_scale, thickness)
     x, y = org
@@ -607,14 +616,14 @@ def draw_text_with_background(img, text, org, font, font_scale, color, thickness
 
 def rotate_image(image, angle):
     """
-    Rotate an image by a given angle.
-    
+    Rotate an image by a given angle (degrees, counterclockwise).
+
     Args:
-        image: Input image
-        angle: Rotation angle in degrees (positive = counterclockwise)
-    
+        image (numpy.ndarray): Input image.
+        angle (float): Rotation angle in degrees.
+
     Returns:
-        Rotated image
+        numpy.ndarray: Rotated image.
     """
     # Get image dimensions
     height, width = image.shape[:2]
@@ -633,19 +642,19 @@ def rotate_image(image, angle):
 def test_template_rotations(template_path, image_path, threshold=0.8, method=cv2.TM_CCOEFF_NORMED,
                           start_angle=-30, end_angle=30, step=1.0):
     """
-    Test template matching with different rotations and return results.
-    
+    Test template matching with different rotations and return results for each angle.
+
     Args:
-        template_path (str): Path to the template image
-        image_path (str): Path to the larger image
-        threshold (float): Matching threshold (0-1)
-        method: OpenCV template matching method
-        start_angle (float): Starting rotation angle in degrees
-        end_angle (float): Ending rotation angle in degrees
-        step (float): Rotation step in degrees
-    
+        template_path (str): Path to the template image.
+        image_path (str): Path to the larger image.
+        threshold (float): Matching threshold (0-1).
+        method (int): OpenCV template matching method.
+        start_angle (float): Starting rotation angle in degrees.
+        end_angle (float): Ending rotation angle in degrees.
+        step (float): Rotation step in degrees.
+
     Returns:
-        list: List of tuples (angle, best_confidence, num_matches, best_location)
+        list: List of tuples (angle, best_confidence, num_matches, best_location).
     """
     try:
         # Read the images
@@ -691,16 +700,16 @@ def test_template_rotations(template_path, image_path, threshold=0.8, method=cv2
 
 def create_rotation_result_image(image_path, template_path, rotation_results, method):
     """
-    Create a result image with squares drawn based on rotation test results.
-    
+    Create a result image with rectangles for each rotation test result.
+
     Args:
-        image_path (str): Path to the main image
-        template_path (str): Path to the template image
-        rotation_results (list): List of tuples (angle, best_confidence, num_matches, best_location)
-        method: OpenCV template matching method
-    
+        image_path (str): Path to the main image.
+        template_path (str): Path to the template image.
+        rotation_results (list): List of tuples (angle, best_confidence, num_matches, best_location).
+        method (int): OpenCV template matching method.
+
     Returns:
-        result_image: Result image with squares drawn
+        numpy.ndarray or None: Result image with rectangles, or None if error.
     """
     try:
         # Read the images
@@ -765,13 +774,13 @@ def create_rotation_result_image(image_path, template_path, rotation_results, me
 def remove_duplicate_points(points, distance_threshold=2):
     """
     Remove duplicate points that are within a certain distance of each other.
-    
+
     Args:
-        points (list): List of (x, y) coordinate tuples
-        distance_threshold (int): Minimum distance between points to consider them different
-    
+        points (list): List of (x, y) coordinate tuples.
+        distance_threshold (int): Minimum distance between points to consider them different.
+
     Returns:
-        list: Filtered list of points with duplicates removed
+        list: Filtered list of points with duplicates removed.
     """
     if not points:
         return []
@@ -797,10 +806,21 @@ def remove_duplicate_points(points, distance_threshold=2):
 def find_image_multiscale(image, template, threshold, method, rotation_start=0, rotation_end=0, rotation_step=0):
     """
     Multi-scale template matching with rotation testing: first on low-res, then refine on high-res.
-    Displays the 10 highest correlation points on the low-res image for the best rotation.
-    Uses step * 20 for rotation testing to speed up the process.
-    """
 
+    Args:
+        image (numpy.ndarray): Main image to search in.
+        template (numpy.ndarray): Template image to find.
+        threshold (float): Matching threshold (0-1).
+        method (int): OpenCV template matching method.
+        rotation_start (int, optional): Start angle for rotation search.
+        rotation_end (int, optional): End angle for rotation search.
+        rotation_step (int, optional): Step size for rotation search.
+
+    Returns:
+        tuple: (best_points (list), best_confidences (list), best_angle (float), best_confidence (float), results_low_res (list)).
+    """
+    current_time = time.time()
+    print(f"enter the find_image_multiscale function current_time is {current_time}")
     template_low_res = cv2.resize(template, (0,0), fx=0.5, fy=0.5)
     image_low_res = cv2.resize(image, (0,0), fx=0.5, fy=0.5)
     # Check if rotation testing is enabled
@@ -812,10 +832,10 @@ def find_image_multiscale(image, template, threshold, method, rotation_start=0, 
        
     # Use 5x larger step for rotation testing
     rotation_range = rotation_end - rotation_start
-    if rotation_range < 20:
+    if abs(rotation_range) < 20:
         rotation_step = 1
     else:
-        rotation_step = int(rotation_range / 20)
+        rotation_step = int(abs(rotation_range) / 20)
     angles = np.arange(rotation_start, rotation_end + rotation_step, rotation_step)
     
     best_confidence = -1
@@ -827,6 +847,11 @@ def find_image_multiscale(image, template, threshold, method, rotation_start=0, 
     # # Downscale main image for quick search
     # image_low_res = cv2.resize(image, (0,0), fx=0.5, fy=0.5)
 
+    if rotation_start != rotation_end:
+        angles = np.arange(rotation_start, rotation_end, rotation_step)
+    else:
+        angles = [rotation_start]
+    
     # Test different rotations
     for angle in angles:
         try:

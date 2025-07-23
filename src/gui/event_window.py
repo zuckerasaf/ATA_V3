@@ -121,7 +121,7 @@ class EventWindow(tk.Tk):
         y = self.winfo_y() + deltay
         self.geometry(f"+{x}+{y}")
         
-    def update_event(self, event):
+    def update_event(self, event,state ="recording"):
         """
         Update the displayed event data.
 
@@ -130,7 +130,7 @@ class EventWindow(tk.Tk):
         event : Event
             The event data to display.
         """
-        text = f" Event #{event.counter} | Position: {event.position} | Type: {event.event_type} | Action: {event.action} | Time: {event.time}ms"
+        text = f"{state} |  Event #{event.counter} | Position: {event.position} | Type: {event.event_type} | Action: {event.action} | Time: {event.time}ms"
         self.event_label.config(text=text)
         
     def on_closing(self):
