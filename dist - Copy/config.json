@@ -1,6 +1,33 @@
 {
     "keyboard": {
         "quit_key": "esc",
+        "special_keys": [
+            "alt", "alt_l", "alt_r", "alt_gr",
+            "backspace",
+            "caps_lock",
+            "cmd", "cmd_l", "cmd_r",
+            "ctrl", "ctrl_l", "ctrl_r",
+            "delete",
+            "down",
+            "end",
+            "enter",
+            "esc",
+            "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12",
+            "home",
+            "left",
+            "page_down",
+            "page_up",
+            "right",
+            "shift", "shift_l", "shift_r",
+            "space",
+            "tab",
+            "up",
+            "insert",
+            "menu",
+            "num_lock",
+            "pause",
+            "print_screen"
+        ],
         "print_screen_key": "f2",
         "invalid_chars": "<>:\"/\\|?*",
         "comment_screen_key": "f3"
@@ -96,15 +123,13 @@
         "rotation_end": 30,
         "rotation_step": 1,
         "match_algorithm": ["TM_CCOEFF_NORMED", "TM_CCORR_NORMED", "TM_SQDIFF_NORMED"],
-        "distance_error": 0.1,
-        "use_match_percentage_ref": true
+        "distance_error": 0.1
     },
-    "minmumMatchPresent_high": 70,
+    "minmumMatchPresent_high": 80,
     "minmumMatchPresent_medium": 50,
-    "minmumMatchPresent_low": 30,
+    "minmumMatchPresent_low": 0,
     "majorFuckup": 0,
     "multiWindow": false,
     "newParam": "blabla",
-    "time_sleep": 0.3,
-    "time_sleep_screenshot": 0.5
+    "time_sleep": 0.3
 } 

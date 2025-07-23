@@ -359,7 +359,7 @@ class TestRunner:
                 
                 # Update the floating window
                 if hasattr(self, 'event_window') and self.event_window and self.event_window.winfo_exists():
-                    self.event_window.update_event(resevent)
+                    self.event_window.update_event(resevent,"running")
                 self.last_event_time = current_time
                 
         except Exception as e:
@@ -389,7 +389,7 @@ class TestRunner:
             print("\n Stopping test execution as quit key reached ...")
             self.running = False
             self.current_test.add_event(resevent)  # Add event to current test
-            self.event_window.update_event(resevent) # Update the floating window
+            self.event_window.update_event(resevent,"running") # Update the floating window
 
             # Save the test data using the imported save_test function
             filepath = save_test(self.current_test, self.test.comment1.split(": ")[1], "running",self.result_folder_path)
@@ -407,7 +407,7 @@ class TestRunner:
             print("\nPrint screen key pressed...")
             self.save = False # stop the saving of the listener data while deal with the snapshot 
             # Add a small delay to allow the window to update
-            time.sleep(0.1)  # 100ms delay
+            time.sleep(config.get("time_sleep_screenshot"))  # 100ms delay
             screenshot = capture_screen(resevent.pic_x,resevent.pic_y,resevent.pic_width,resevent.pic_height)
             if screenshot:
                 self.screenshot_counter += 1
@@ -440,9 +440,12 @@ class TestRunner:
 
                     # if the use_match_percentage_ref is true, use the match percentage to determine the pass criteria, it it false event 0 match will not stop the test 
                     use_match_percentage_ref = image_compare_config.get("use_match_percentage_ref", True)
-                    if resevent.priority == "high" and use_match_percentage_ref :
+
+
+                    
+                    if str(config.get("minmumMatchPresent_high")) in resevent.priority and use_match_percentage_ref :
                         match_percentage_ref = config.get("minmumMatchPresent_high")
-                    elif resevent.priority == "medium" and use_match_percentage_ref:
+                    elif str(config.get("minmumMatchPresent_medium")) in resevent.priority and use_match_percentage_ref:
                         match_percentage_ref = config.get("minmumMatchPresent_medium")
                     else:
                         match_percentage_ref = config.get("minmumMatchPresent_low")
@@ -467,7 +470,7 @@ class TestRunner:
                     #elf.current_test.comment2 = match_percentage
                     self.save = True # Resume saving events    
                     if self.event_window:
-                        self.event_window.update_event(resevent)
+                        self.event_window.update_event(resevent,"running")
 
                     run_log.add(str(Match_path), level="IMAGE")
                     run_log.add(event.step_desc + " - " + resevent.step_resau, level="INFO")
@@ -484,17 +487,27 @@ class TestRunner:
                         self.completion_queue.put(True)
                         self.running = False
                         self.current_test.add_event(resevent)  # Add event to current test
-                        self.event_window.update_event(resevent) # Update the floating window
+                        self.event_window.update_event(resevent,"running") # Update the floating window
                         run_log.add("the "  + os.path.basename(resevent.pic_path)+   " gain match precentage of bellow the continue cretira -> " + str(match_percentage_ref) + "<- Test Stopped -> " , level="WARNING")
         
         # Handle special keys
         special_key_map = {
             'space': keyboard.Key.space,
+            'cmd': keyboard.Key.cmd,
+            'cmd_l': keyboard.Key.cmd_l,
+            'cmd_r': keyboard.Key.cmd_r,
             'enter': keyboard.Key.enter,
             'tab': keyboard.Key.tab,
             'shift': keyboard.Key.shift,
+            'shift_l': keyboard.Key.shift_l,
+            'shift_r': keyboard.Key.shift_r,
             'ctrl': keyboard.Key.ctrl,
+            'ctrl_l': keyboard.Key.ctrl_l,
+            'ctrl_r': keyboard.Key.ctrl_r,
             'alt': keyboard.Key.alt,
+            'alt_l': keyboard.Key.alt_l,
+            'alt_r': keyboard.Key.alt_r,
+            'alt_gr': keyboard.Key.alt_gr,
             'esc': keyboard.Key.esc,
             'backspace': keyboard.Key.backspace,
             'delete': keyboard.Key.delete,
@@ -540,9 +553,9 @@ class TestRunner:
             self.current_test.add_event(resevent)
             
             # Update the floating window
-            self.event_window.update_event(resevent)
+            self.event_window.update_event(resevent,"running")
             self.last_event_time = current_time
-
+        return
     def execute_mouse_scroll(self, event):
         """
         Execute a mouse scroll event.
@@ -582,7 +595,7 @@ class TestRunner:
                 
                 # Update the floating window
                 if hasattr(self, 'event_window') and self.event_window and self.event_window.winfo_exists():
-                    self.event_window.update_event(resevent)
+                    self.event_window.update_event(resevent,"running")
                 self.last_event_time = current_time
                 
         except Exception as e:

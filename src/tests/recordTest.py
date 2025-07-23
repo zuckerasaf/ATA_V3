@@ -307,9 +307,14 @@ class EventListener:
                 step_on=f"{config.get_step_prefix()} {self.counter}",
                 time_from_last=time_diff
             )
+            if self.current_test.save == True and event is not None:        
+                    self.current_test.add_event(event)
+                    self.event_window.update_event(event)
+
+
         except AttributeError:
             # Handle special keys such as print and quit ....
-            if key.name in config.get_special_keys() :
+            if True: #key.name in config.get_special_keys() :
                 # Create base event for special keys
                 event = Event(
                     counter=self.counter,
@@ -344,7 +349,9 @@ class EventListener:
                     # Create dialog and wait for it
                     dialog = ScreenshotDialog(self.screenshot_counter)
                     dialog.dialog.wait_window()
-                    
+                    if dialog.result is None:
+                        self.current_test.save = True
+                        return
                     # Calculate time spent in dialog
                     dialog_end_time = int(time.time() * 1000)
                     time_in_dialog = dialog_end_time - dialog_start_time
@@ -423,7 +430,7 @@ class EventListener:
                         
             
 
-                if key.name == self.comment_key:
+                elif key.name == self.comment_key:
                     self.current_test.save = False # stop the saving of the listener data while deal with the comment
                     print("\nComment key pressed...")
                     dialog = CommentDialog()
@@ -434,7 +441,7 @@ class EventListener:
                         self.current_test.add_event(event)
                         self.event_window.update_event(event)
 
-                if key.name == self.quit_key:
+                elif key.name == self.quit_key:
 
                     print("\nStopping event listener...")
                     self.running = False
@@ -454,6 +461,12 @@ class EventListener:
                     # Schedule window destruction and control panel restart in the main thread
                     self.event_window.after(0, lambda: cleanup_and_restart(self.event_window))
                     return False
+                
+                else:
+                    self.current_test.save = True
+                    if self.current_test.save == True and event is not None:        
+                        self.current_test.add_event(event)
+                        self.event_window.update_event(event)
             else:
                 self.current_test.save = True  
         # if self.save == True and event is not None:        # <-- Only use event if it was assigned
@@ -487,7 +500,7 @@ class EventListener:
         if not config.should_track_mouse_scroll():
             return True
         
-        if self.save == False:
+        if self.current_test.save == False:
             return
             
         self.counter += 1

@@ -157,16 +157,17 @@ class ScreenshotDialog:
         self.dialog.grab_set()
        
         # Priority Section
-        ttk.Label(scrollable_frame, text="Priority:").pack(anchor="w", pady=(0, 5), padx=5)
-        self.priority_var = StringVar(value=self.config.get('event', {}).get('priority', 'medium'))
-        priority_frame = ttk.Frame(scrollable_frame)
-        priority_frame.pack(fill="x", pady=(0, 10), padx=5)
-        
-
         low = "low - " + str(self.config.get("minmumMatchPresent_low", 30)) + "%"
         medium = "medium - " + str(self.config.get("minmumMatchPresent_medium", 50)) + "%"
         high = "high - " + str(self.config.get("minmumMatchPresent_high", 70)) + "%"
         priorities = [low, medium, high]
+        ttk.Label(scrollable_frame, text="Test cut at:").pack(anchor="w", pady=(0, 5), padx=5)
+        self.priority_var = StringVar(value=medium)
+        priority_frame = ttk.Frame(scrollable_frame)
+        priority_frame.pack(fill="x", pady=(0, 10), padx=5)
+        
+
+
         for priority in priorities:
             ttk.Radiobutton(
                 priority_frame,
@@ -737,7 +738,6 @@ class ScreenshotDialog:
         """
         print("\nDialog cancelled")
         self.result = None
-    
         # Release grab and destroy window
         self.dialog.grab_release()
         self.dialog.destroy() 
