@@ -1,20 +1,18 @@
-"""
-Test recording module for capturing mouse and keyboard events.
+"""Test recording module for capturing mouse and keyboard events.
 
 This module provides functionality to record mouse and keyboard events during test execution.
 It includes an EventListener class that captures mouse movements, clicks, keyboard presses, and scroll events,
 and updates a floating event window with the recorded events.
 
-Classes
--------
-EventListener
-    A class that listens for mouse and keyboard events and records them for test execution.
-
-Functions
----------
-main(test_name=None, starting_point="none")
-    Main function to start the test recording process.
+The module handles:
+- Real-time event capture and recording
+- Screenshot capture with template matching
+- Drag operation detection and recording
+- Special key handling (quit, print screen, comment)
+- Event timing and synchronization
+- Test data serialization and storage
 """
+
 import cv2
 import os
 import sys
@@ -51,75 +49,43 @@ run_log = RunLog()
 
 
 class EventListener:
-    """
-    A class that listens for mouse and keyboard events and records them for test execution.
-
+    """A class that listens for mouse and keyboard events and records them for test execution.
+    
     This class captures mouse movements, clicks, keyboard presses, and scroll events,
-    and updates a floating event window with the recorded events.
-
-    Attributes
-    ----------
-    counter : int
-        Counter for the number of events recorded.
-    screenshot_counter : int
-        Counter for the number of screenshots taken.
-    start_time : int
-        The start time of the recording in milliseconds.
-    last_event_time : int
-        The time of the last recorded event in milliseconds.
-    neto_time : int
-        The net time elapsed since the start of the recording, excluding time spent in the screenshot dialog.
-    running : bool
-        Flag indicating whether the event listener is running.
-    save : bool
-        Flag indicating whether to save the recorded events.
-    event_window : EventWindow
-        The floating window that displays the recorded events.
-    quit_key : str
-        The key used to quit the recording.
-    print_screen_key : str
-        The key used to take a screenshot.
-    test_name : str, optional
-        The name of the test being recorded.
-    dialog_open : bool
-        Flag indicating whether a dialog is open.
-    last_press_position : tuple, optional
-        The last position where a mouse button was pressed.
-    last_press_time : int, optional
-        The time when the last mouse button was pressed.
-    drag_positions : list
-        List of positions recorded during a drag operation.
-    drag_times : list
-        List of times recorded during a drag operation.
-    current_test : Test
-        The current test instance being recorded.
-
-    Methods
-    -------
-    on_move(x, y)
-        Track mouse movement during drag operations.
-    on_click(x, y, button, pressed)
-        Handle mouse click events, including drag operations.
-    on_press(key)
-        Handle keyboard press events.
-    on_scroll(x, y, dx, dy)
-        Handle mouse scroll events.
+    and updates a floating event window with the recorded events. It handles special
+    keys for quitting, taking screenshots, and adding comments.
+    
+    Attributes:
+        counter: Counter for the number of events recorded
+        screenshot_counter: Counter for the number of screenshots taken
+        start_time: The start time of the recording in milliseconds
+        last_event_time: The time of the last recorded event in milliseconds
+        neto_time: The net time elapsed since the start of the recording, excluding time spent in the screenshot dialog
+        running: Flag indicating whether the event listener is running
+        save: Flag indicating whether to save the recorded events
+        event_window: The floating window that displays the recorded events
+        quit_key: The key used to quit the recording
+        print_screen_key: The key used to take a screenshot
+        comment_key: The key used to add comments
+        test_name: The name of the test being recorded
+        dialog_open: Flag indicating whether a dialog is open
+        last_press_position: The last position where a mouse button was pressed
+        last_press_time: The time when the last mouse button was pressed
+        drag_positions: List of positions recorded during a drag operation
+        drag_times: List of times recorded during a drag operation
+        current_test: The current test instance being recorded
     """
 
     def __init__(self, event_window, test_name=None, starting_point="none", description="nothing for now", precondition="nothing for now", accuracylevel=0.8):
-        """
-        Initialize the EventListener with the given event window and test name.
-
-        Parameters
-        ----------
-        event_window : EventWindow
-            The floating window that displays the recorded events.
-        test_name : str, optional
-            The name of the test being recorded.
-        starting_point : str, optional
-            The starting point for the test recording.
-        precondition : str, optional
-            The precondition for the test recording.
+        """Initialize the EventListener with the given event window and test name.
+        
+        Args:
+            event_window: The floating window that displays the recorded events
+            test_name: The name of the test being recorded (default: None)
+            starting_point: The starting point for the test recording (default: "none")
+            description: Description of the test (default: "nothing for now")
+            precondition: The precondition for the test recording (default: "nothing for now")
+            accuracylevel: Accuracy level for image matching (default: 0.8)
         """
         self.counter = 0
         self.screenshot_counter = 0
@@ -150,15 +116,11 @@ class EventListener:
         )
         
     def on_move(self, x, y):
-        """
-        Track mouse movement during drag operations.
-
-        Parameters
-        ----------
-        x : int
-            The x-coordinate of the mouse.
-        y : int
-            The y-coordinate of the mouse.
+        """Track mouse movement during drag operations.
+        
+        Args:
+            x: The x-coordinate of the mouse
+            y: The y-coordinate of the mouse
         """
         if self.save == False:
             return
@@ -169,24 +131,16 @@ class EventListener:
             self.drag_times.append(current_time)
 
     def on_click(self, x, y, button, pressed):
-        """
-        Handle mouse click events, including drag operations.
-
-        Parameters
-        ----------
-        x : int
-            The x-coordinate of the mouse.
-        y : int
-            The y-coordinate of the mouse.
-        button : Button
-            The mouse button that was clicked.
-        pressed : bool
-            Whether the button was pressed or released.
-
-        Returns
-        -------
-        bool
-            True if the event should be tracked, False otherwise.
+        """Handle mouse click events, including drag operations.
+        
+        Args:
+            x: The x-coordinate of the mouse
+            y: The y-coordinate of the mouse
+            button: The mouse button that was clicked
+            pressed: Whether the button was pressed or released
+            
+        Returns:
+            bool: True if the event should be tracked, False otherwise
         """
         if not self.running:
             return False
@@ -272,18 +226,13 @@ class EventListener:
  
 
     def on_press(self, key):
-        """
-        Handle keyboard press events.
-
-        Parameters
-        ----------
-        key : Key
-            The key that was pressed.
-
-        Returns
-        -------
-        bool
-            True if the event should be tracked, False otherwise.
+        """Handle keyboard press events.
+        
+        Args:
+            key: The key that was pressed
+            
+        Returns:
+            bool: True if the event should be tracked, False otherwise
         """
         if self.current_test.save == False:
             return
@@ -475,24 +424,16 @@ class EventListener:
         self.last_event_time = neto_time
 
     def on_scroll(self, x, y, dx, dy):
-        """
-        Handle mouse scroll events.
-
-        Parameters
-        ----------
-        x : int
-            The x-coordinate of the mouse.
-        y : int
-            The y-coordinate of the mouse.
-        dx : int
-            The horizontal scroll amount.
-        dy : int
-            The vertical scroll amount.
-
-        Returns
-        -------
-        bool
-            True if the event should be tracked, False otherwise.
+        """Handle mouse scroll events.
+        
+        Args:
+            x: The x-coordinate of the mouse
+            y: The y-coordinate of the mouse
+            dx: The horizontal scroll amount
+            dy: The vertical scroll amount
+            
+        Returns:
+            bool: True if the event should be tracked, False otherwise
         """
         if not self.running:
             return False
@@ -539,23 +480,20 @@ class EventListener:
             self.last_event_time = neto_time
 
 def main(test_name=None, starting_point="none",description="nothing for now", precondition="nothing for now", accuracylevel=0.8):
-    """
-    Main function to start the test recording process.
-
+    """Main function to start the test recording process.
+    
     This function initializes the event window and event listener, starts mouse and keyboard listeners,
     and runs the main event loop for recording test events. It is the entry point for running a test recording session.
-
-    Parameters
-    ----------
-    test_name : str, optional
-        The name of the test being recorded. If None, a default name is used.
-    starting_point : str, optional
-        The starting point for the test recording. Defaults to "none".
-
-    Returns
-    -------
-    Test
-        The Test object containing all recorded events and metadata.
+    
+    Args:
+        test_name: The name of the test being recorded (default: None)
+        starting_point: The starting point for the test recording (default: "none")
+        description: Description of the test (default: "nothing for now")
+        precondition: The precondition for the test recording (default: "nothing for now")
+        accuracylevel: Accuracy level for image matching (default: 0.8)
+        
+    Returns:
+        Test: The Test object containing all recorded events and metadata
     """
     # # Check if another instance is already running
     # if is_already_running(lock_file):

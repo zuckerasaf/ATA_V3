@@ -1,5 +1,7 @@
-"""
-Dialog for entering test name and starting point.
+"""Dialog for entering test name and starting point.
+
+This module provides a dialog interface for users to enter test metadata when
+creating new tests, including test name, purpose, accuracy level, and starting point.
 """
 
 import tkinter as tk
@@ -8,33 +10,34 @@ from src.utils.config import Config
 from src.utils.general_func import generate_random_word
 
 class TestNameDialog:
-    """
-    Dialog for entering a new test's metadata, including name, purpose, accuracy level, and starting point.
-
-    This dialog is used in the Control Panel to prompt the user for information when creating a new test.
-    It provides fields for the test name, test purpose, accuracy level (with a slider), and starting point (from a list).
-    The dialog validates the test name and returns the collected data as a dictionary when the user confirms.
-
-    Attributes
-    ----------
-    result : dict or None
-        The result dictionary containing the test parameters if the user pressed OK, or None if cancelled.
-    config : Config
-        The configuration object used to retrieve dialog and starting point options.
-    dialog : tk.Toplevel
-        The Tkinter toplevel window for the dialog.
-
-    Methods
-    -------
-    update_accuracy_label(*args)
-        Update the accuracy level label when the slider changes.
-    _on_ok()
-        Handle the OK button click, validate input, and store the result.
-    _on_cancel()
-        Handle the Cancel button click and close the dialog.
+    """Dialog for entering a new test's metadata.
+    
+    This dialog is used in the Control Panel to prompt the user for information
+    when creating a new test. It provides fields for the test name, test purpose,
+    accuracy level (with a slider), and starting point (from a list). The dialog
+    validates the test name and returns the collected data as a dictionary when
+    the user confirms.
+    
+    Attributes:
+        result: The result dictionary containing the test parameters if the user
+            pressed OK, or None if cancelled
+        config: The configuration object used to retrieve dialog and starting point options
+        dialog: The Tkinter toplevel window for the dialog
+        name_var: StringVar for the test name entry
+        purpose_var: StringVar for the test purpose entry
+        accuracy_var: IntVar for the accuracy level slider
+        starting_point_var: StringVar for the starting point combobox
+        precondition_text: Text widget for test precondition
     """
 
     def __init__(self):
+        """Initialize the test name dialog.
+        
+        Creates a modal dialog with input fields for test metadata including
+        name, purpose, accuracy level, precondition, and starting point.
+        The dialog uses configuration settings for window properties and
+        provides validation for the test name.
+        """
         self.result = None
         self.config = Config()
         
@@ -136,12 +139,25 @@ class TestNameDialog:
         self.dialog.protocol("WM_DELETE_WINDOW", self._on_cancel)
         
     def update_accuracy_label(self, *args):
-        """Update the accuracy level label when the slider changes."""
+        """Update the accuracy level label when the slider changes.
+        
+        Converts the slider value (1-10) to a percentage (55%-100%) and
+        updates the display label accordingly.
+        """
         accuracy_number = 50+(self.accuracy_var.get()*5)
         self.accuracy_label.config(text=str(accuracy_number)+"%")
     
     def _on_ok(self):
-        """Handle OK button click."""
+        """Handle OK button click.
+        
+        Validates the test name for invalid characters and stores all
+        parameters in the result dictionary. Shows warning messages for
+        validation errors.
+        
+        Note:
+            The accuracy level is converted from percentage to decimal
+            (e.g., 80% becomes 0.8) for internal use.
+        """
         name = self.name_var.get().strip()
         print(f"Test name entered: '{name}'")  # Debug print
         
@@ -176,5 +192,8 @@ class TestNameDialog:
         self.dialog.destroy()
     
     def _on_cancel(self):
-        """Handle Cancel button click."""
+        """Handle Cancel button click.
+        
+        Destroys the dialog without saving any data, setting result to None.
+        """
         self.dialog.destroy()

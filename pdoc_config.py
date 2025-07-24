@@ -1,0 +1,234 @@
+"""
+pdoc configuration file for ATA_V3 project documentation generation.
+
+This file configures pdoc to generate comprehensive HTML documentation
+for the entire ATA_V3 codebase with custom settings and styling.
+"""
+
+import pdoc
+import os
+
+# Project information
+project_name = "ATA_V3"
+project_description = "Automated Test Automation Framework"
+project_version = "3.0"
+project_author = "ATA Development Team"
+
+# Documentation settings
+docformat = 'google'  # Use Google-style docstrings
+show_source_code = True  # Include source code in documentation
+show_type_annotations = True  # Show type hints
+show_inherited_members = True  # Show inherited methods
+show_signature_annotations = True  # Show parameter types in signatures
+
+# Output settings
+output_dir = "docs"  # Output directory for HTML files
+template_directory = None  # Use default template
+favicon = None  # No custom favicon
+
+# Module settings
+modules = [
+    'src',  # Main package
+    'src.utils',  # Utilities package
+    'src.gui',  # GUI package
+    'src.tests',  # Tests package
+    'src.Doc',  # Documentation package
+]
+
+# Exclude patterns (files/directories to skip)
+exclude_patterns = [
+    '__pycache__',
+    '*.pyc',
+    '*.pyo',
+    '*.pyd',
+    '.git',
+    '.gitignore',
+    '*.spec',
+    'build',
+    'dist',
+    'venv',
+    '*.lock',
+    '*.log',
+    '*.txt',
+    '*.json',
+    '*.jpg',
+    '*.png',
+    '*.ico',
+    '*.bat',
+    '*.drawio',
+    '*.drawio.html',
+    'ToDo'
+]
+
+# HTML template customization
+html_extra_head = f"""
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{project_description}">
+<meta name="author" content="{project_author}">
+<style>
+    body {{
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }}
+    .navbar {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }}
+    .navbar h1 {{
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 300;
+    }}
+    .navbar p {{
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+    }}
+    .module {{
+        background: white;
+        border: 1px solid #e1e5e9;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }}
+    .function, .class {{
+        border-left: 4px solid #667eea;
+        padding-left: 1rem;
+        margin: 1rem 0;
+    }}
+    .function h3, .class h3 {{
+        color: #667eea;
+        margin-top: 0;
+    }}
+    pre {{
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 1rem;
+        overflow-x: auto;
+    }}
+    code {{
+        background: #f1f3f4;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-size: 0.9em;
+    }}
+    .doc-contents {{
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }}
+    .doc-contents h4 {{
+        color: #495057;
+        margin-top: 0;
+    }}
+    .doc-contents ul {{
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+    }}
+    .doc-contents li {{
+        margin: 0.25rem 0;
+    }}
+    .signature {{
+        background: #e3f2fd;
+        border: 1px solid #bbdefb;
+        border-radius: 4px;
+        padding: 0.5rem;
+        font-family: 'Courier New', monospace;
+        margin: 0.5rem 0;
+    }}
+    .source-link {{
+        float: right;
+        font-size: 0.8em;
+        color: #6c757d;
+        text-decoration: none;
+    }}
+    .source-link:hover {{
+        color: #495057;
+    }}
+    .toc {{
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }}
+    .toc h3 {{
+        margin-top: 0;
+        color: #495057;
+    }}
+    .toc ul {{
+        list-style-type: none;
+        padding-left: 0;
+    }}
+    .toc li {{
+        margin: 0.25rem 0;
+    }}
+    .toc a {{
+        color: #667eea;
+        text-decoration: none;
+    }}
+    .toc a:hover {{
+        text-decoration: underline;
+    }}
+    @media (max-width: 768px) {{
+        body {{
+            padding: 10px;
+        }}
+        .navbar h1 {{
+            font-size: 1.5rem;
+        }}
+        .module {{
+            padding: 1rem;
+        }}
+    }}
+</style>
+"""
+
+# Custom HTML header
+html_header = f"""
+<div class="navbar">
+    <h1>{project_name}</h1>
+    <p>{project_description} - Version {project_version}</p>
+    <p>Comprehensive API documentation for the Automated Test Automation Framework</p>
+</div>
+"""
+
+# Custom HTML footer
+html_footer = f"""
+<hr>
+<div style="text-align: center; color: #6c757d; font-size: 0.9em; margin-top: 2rem;">
+    <p>Generated by <a href="https://pdoc3.github.io/pdoc/" target="_blank">pdoc</a> for {project_name} v{project_version}</p>
+    <p>Documentation last updated: {pdoc.__version__}</p>
+</div>
+"""
+
+# Export configuration
+__all__ = [
+    'project_name',
+    'project_description', 
+    'project_version',
+    'project_author',
+    'docformat',
+    'show_source_code',
+    'show_type_annotations',
+    'show_inherited_members',
+    'show_signature_annotations',
+    'output_dir',
+    'template_directory',
+    'favicon',
+    'modules',
+    'exclude_patterns',
+    'html_extra_head',
+    'html_header',
+    'html_footer'
+] 

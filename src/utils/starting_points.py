@@ -1,15 +1,12 @@
-"""
-Module for handling different starting points for test recording.
+"""Module for handling different starting points for test recording.
 
 This module provides utility functions to navigate to various starting points before beginning test recording. 
 It supports minimizing all windows to show the desktop, opening Google Maps, and placeholders for other points.
 
-Functions
----------
-minimize_all_windows()
-    Minimize all windows to show the desktop.
-go_to_starting_point(point_name)
-    Navigate to the specified starting point before beginning test recording.
+The module handles:
+- Desktop navigation (minimizing all windows)
+- Web browser navigation (Google Maps)
+- Extensible starting point system for future additions
 """
 
 import os
@@ -21,16 +18,13 @@ from src.utils.config import Config
 
 
 def minimize_all_windows():
-    """
-    Minimize all windows to show the desktop.
+    """Minimize all windows to show the desktop.
 
     This function simulates the Windows + D hotkey to minimize all open windows and display the desktop.
     It is useful for setting a clean starting point before running or recording a test.
 
-    Raises
-    ------
-    Exception
-        If the hotkey press fails or pyautogui encounters an error.
+    Raises:
+        Exception: If the hotkey press fails or pyautogui encounters an error (handled internally)
     """
     try:
         # Send Windows + D to show desktop
@@ -41,21 +35,26 @@ def minimize_all_windows():
 
 
 def go_to_starting_point(point_name):
-    """
-    Navigate to the specified starting point before beginning test recording.
+    """Navigate to the specified starting point before beginning test recording.
 
     This function handles navigation to various predefined starting points, such as minimizing all windows to show the desktop
     or opening Google Maps in a browser. It uses configuration values for URLs and supports extension for additional points.
 
-    Parameters
-    ----------
-    point_name : str
-        Name of the starting point (e.g., "desktop", "google_map", "point_B", "point_C", "none").
+    Args:
+        point_name: Name of the starting point (e.g., "desktop", "google_map", "point_B", "point_C", "none")
 
-    Returns
-    -------
-    bool
-        True if successfully navigated to the starting point, False otherwise.
+    Returns:
+        bool: True if successfully navigated to the starting point, False otherwise
+
+    Raises:
+        Exception: For navigation errors (handled internally)
+
+    Note:
+        Supported starting points:
+        - "desktop": Minimize all windows to show desktop
+        - "google_map": Minimize windows and open Google Maps in browser
+        - "point_b", "point_c": Placeholder for future implementation
+        - "none": No navigation required
     """
     try:
         if point_name.lower() == "desktop":

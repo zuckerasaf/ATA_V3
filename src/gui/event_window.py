@@ -1,13 +1,10 @@
-"""
-Floating window for displaying event data.
+"""Floating window for displaying event data.
 
 This module provides a floating window to display event data during test execution.
 It includes an EventWindow class that updates the displayed event information and handles window dragging.
 
-Classes
--------
-EventWindow
-    A class that creates a floating window to display event data.
+The window displays real-time information about events being recorded or executed,
+including event counter, position, type, action, and timing information.
 """
 
 import tkinter as tk
@@ -17,43 +14,26 @@ from src.utils.process_utils import terminate_running_instance, close_existing_m
 
 
 class EventWindow(tk.Tk):
-    """
-    A class that creates a floating window to display event data.
-
-    This class initializes a Tkinter window that displays event data and allows for window dragging.
-    It updates the displayed event information and handles window closing.
-
-    Attributes
-    ----------
-    frame : ttk.Frame
-        The main frame of the window.
-    event_label : ttk.Label
-        The label that displays the event data.
-    x : int
-        The initial x-coordinate for window dragging.
-    y : int
-        The initial y-coordinate for window dragging.
-
-    Methods
-    -------
-    start_move(event)
-        Start window dragging.
-    on_move(event)
-        Handle window dragging.
-    update_event(event)
-        Update the displayed event data.
-    on_closing()
-        Handle window closing.
+    """A floating window to display event data during test execution.
+    
+    This class creates a draggable, always-on-top window that displays real-time
+    information about events being recorded or executed. It includes transparency
+    settings and proper cleanup on window closing.
+    
+    Attributes:
+        frame: The main frame of the window
+        event_label: The label that displays the event data
+        x: The initial x-coordinate for window dragging
+        y: The initial y-coordinate for window dragging
     """
 
     def __init__(self, test_name=None, run_number=1, run_total=1):
-        """
-        Initialize the EventWindow with the given test name.
-
-        Parameters
-        ----------
-        test_name : str, optional
-            The name of the test being executed.
+        """Initialize the EventWindow with the given test name.
+        
+        Args:
+            test_name: The name of the test being executed (default: None)
+            run_number: Current run number (default: 1)
+            run_total: Total number of runs (default: 1)
         """
         super().__init__()
         
@@ -95,25 +75,19 @@ class EventWindow(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
     def start_move(self, event):
-        """
-        Start window dragging.
-
-        Parameters
-        ----------
-        event : tk.Event
-            The event that triggered the start of dragging.
+        """Start window dragging.
+        
+        Args:
+            event: The event that triggered the start of dragging
         """
         self.x = event.x
         self.y = event.y
         
     def on_move(self, event):
-        """
-        Handle window dragging.
-
-        Parameters
-        ----------
-        event : tk.Event
-            The event that triggered the dragging.
+        """Handle window dragging.
+        
+        Args:
+            event: The event that triggered the dragging
         """
         deltax = event.x - self.x
         deltay = event.y - self.y
@@ -121,24 +95,24 @@ class EventWindow(tk.Tk):
         y = self.winfo_y() + deltay
         self.geometry(f"+{x}+{y}")
         
-    def update_event(self, event,state ="recording"):
-        """
-        Update the displayed event data.
-
-        Parameters
-        ----------
-        event : Event
-            The event data to display.
+    def update_event(self, event, state="recording"):
+        """Update the displayed event data.
+        
+        Args:
+            event: The event data to display
+            state: Current state ("recording" or "running") (default: "recording")
         """
         text = f"{state} |  Event #{event.counter} | Position: {event.position} | Type: {event.event_type} | Action: {event.action} | Time: {event.time}ms"
         self.event_label.config(text=text)
         
     def on_closing(self):
-        """
-        Handle window closing.
-
-        This function closes any existing mouse listener threads, terminates the running instance,
-        and destroys the window.
+        """Handle window closing.
+        
+        This method performs cleanup operations including closing mouse listener
+        threads, terminating the running instance, and destroying the window.
+        
+        Raises:
+            Exception: For errors during cleanup (handled internally)
         """
         try:
             # Close any existing mouse listener threads

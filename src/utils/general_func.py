@@ -1,25 +1,14 @@
-"""
-General utility functions for test automation.
+"""General utility functions for test automation.
 
-This module provides helper functions for speech-to-text, random word generation, test data loading,
-summary display, and image management for test automation workflows.
+This module provides helper functions for test data management, file operations,
+string manipulation, and image handling for test automation workflows.
 
-Functions
----------
-speech_to_text(duration=5, sample_rate=16000, model_size="base")
-    Record from microphone and convert speech to text using Whisper.
-generate_random_word()
-    Generate a random 5-letter word.
-display_test_data(file_path)
-    Display a summary of test data from a JSON file.
-create_test_from_json(filepath)
-    Create a Test instance from a JSON file.
-update_images_to_test(result_folder_path)
-    Copy all _Result.jpg images from a result folder to the corresponding test folder.
-replace_last_part_of_string(original_string, old_suffix, new_suffix)
-    Replace the last occurrence of a suffix in a string with a new suffix.
-insert_match_before_result(file_path)
-    Insert "_Match" before "_Result" in a file path.
+The module includes functions for:
+- Random word generation for test names
+- Test data loading and display from JSON files
+- Image file management and copying
+- String manipulation utilities
+- Test object creation and serialization
 """
 
 import json
@@ -46,30 +35,34 @@ run_log = RunLog()
 
 
 def generate_random_word():
-    """
-    Generate a random 5-letter word.
+    """Generate a random 5-letter word.
     
-    Returns
-    -------
-    str
-        A random 5-letter lowercase word.
+    Returns:
+        str: A random 5-letter lowercase word
+        
+    Example:
+        >>> generate_random_word()
+        'abcde'
     """
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for _ in range(5))
 
 def display_test_data(file_path):
-    """
-    Display a summary of test data from a JSON file.
+    """Display a summary of test data from a JSON file.
     
-    Parameters
-    ----------
-    file_path : str
-        Path to the test JSON file.
+    Loads a test from JSON and extracts step names and results for display
+    in the GUI. Handles cases where the file is missing or invalid.
+    
+    Args:
+        file_path: Path to the test JSON file
         
-    Returns
-    -------
-    list
-        A list of [step name, result] pairs summarizing the test steps.
+    Returns:
+        list: A list of [step name, result] pairs summarizing the test steps.
+            Returns [["Name1", ""]] if no data is available.
+            
+    Raises:
+        FileNotFoundError: If the test file doesn't exist (handled internally)
+        json.JSONDecodeError: If the JSON file is invalid (handled internally)
     """
     test_summary = []
     test = create_test_from_json(file_path)
@@ -90,18 +83,22 @@ def display_test_data(file_path):
 
 
 def create_test_from_json(filepath):
-    """
-    Create a Test instance from a JSON file.
+    """Create a Test instance from a JSON file.
     
-    Parameters
-    ----------
-    filepath : str
-        Path to the test JSON file.
+    Loads test configuration, events, and results from a JSON file and
+    creates a Test object with all the data. Handles various error conditions
+    gracefully and logs errors to the run log.
+    
+    Args:
+        filepath: Path to the test JSON file
         
-    Returns
-    -------
-    Test or None
-        The Test object if loaded successfully, otherwise None.
+    Returns:
+        Test or None: The Test object if loaded successfully, otherwise None
+        
+    Raises:
+        FileNotFoundError: If the test file doesn't exist (handled internally)
+        json.JSONDecodeError: If the JSON file is invalid (handled internally)
+        Exception: For other errors during loading (handled internally)
     """
     try:
         with open(filepath, 'r') as f:
@@ -143,19 +140,23 @@ def create_test_from_json(filepath):
         return None
     
 def update_images_to_test(result_folder_path):
-    """
-    Copy all _Result.jpg images from a result folder to the corresponding test folder.
-    Only copies files ending with _Result.jpg and renames them by removing _Result.
+    """Copy all _Result.jpg images from a result folder to the corresponding test folder.
     
-    Parameters
-    ----------
-    result_folder_path : str
-        Path to the result folder (e.g., 'DB/Result/20250517_224058_paint').
+    This function copies screenshot images from test results back to the test folder
+    for future reference. It renames the files by removing the "_Result" suffix.
+    
+    Args:
+        result_folder_path: Path to the result folder (e.g., 'DB/Result/20250517_224058_paint')
         
-    Returns
-    -------
-    bool
-        True if images were copied successfully, False otherwise.
+    Returns:
+        bool: True if images were copied successfully, False otherwise
+        
+    Raises:
+        Exception: For file system errors (handled internally)
+        
+    Note:
+        The function expects result folder names in the format:
+        YYYYMMDD_HHMMSS_testname
     """
     try:
         # Get the result folder name
@@ -211,13 +212,16 @@ def update_images_to_test(result_folder_path):
         return False
     
 def replace_last_part_of_string(original_string, old_suffix, new_suffix):
-    """
-    Replace the last occurrence of a suffix in a string with a new suffix.
+    """Replace the last occurrence of a suffix in a string with a new suffix.
+    
+    This function finds the last occurrence of old_suffix in the string and
+    inserts new_suffix before it. If the string doesn't end with old_suffix,
+    the original string is returned unchanged.
     
     Args:
-        original_string (str): The original string to modify
-        old_suffix (str): The suffix to find and replace
-        new_suffix (str): The new suffix to insert before the old suffix
+        original_string: The original string to modify
+        old_suffix: The suffix to find and replace
+        new_suffix: The new suffix to insert before the old suffix
     
     Returns:
         str: The modified string with the new suffix inserted before the old suffix
@@ -239,14 +243,14 @@ def replace_last_part_of_string(original_string, old_suffix, new_suffix):
         return original_string
 
 def insert_match_before_result(file_path):
-    """
-    Insert "_Match" before "_Result" in a file path.
+    """Insert "_Match" before "_Result" in a file path.
     
     This is a convenience function specifically for the common case of
-    inserting "_Match" before "_Result.jpg" in image file paths.
+    inserting "_Match" before "_Result.jpg" in image file paths. It's used
+    for creating template image paths from result image paths.
     
     Args:
-        file_path (str): The file path to modify
+        file_path: The file path to modify
         
     Returns:
         str: The modified file path with "_Match" inserted before "_Result"

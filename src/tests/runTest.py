@@ -1,19 +1,16 @@
-"""
-Script to create and run a Test instance from a JSON file.
+"""Script to create and run a Test instance from a JSON file.
 
 This module provides functionality to load a test from a JSON file and execute its recorded events,
 including mouse, keyboard, and screenshot actions. It includes a TestRunner class for event execution
 and a main() function as the entry point for running a test.
 
-Classes
--------
-TestRunner
-    Class for executing test events loaded from a JSON file.
-
-Functions
----------
-main(test_full_name=None, callback=None)
-    Main entry point for running a test from a JSON file.
+The module handles:
+- Test loading and deserialization from JSON
+- Event execution with timing synchronization
+- Mouse and keyboard event simulation
+- Screenshot capture and image comparison
+- Test result validation and reporting
+- Real-time event monitoring and display
 """
 
 import os
@@ -59,76 +56,37 @@ run_log = RunLog()
 #             thread.join()
 
 class TestRunner:
-    """
-    Class for executing test events loaded from a JSON file.
-
+    """Class for executing test events loaded from a JSON file.
+    
     This class handles the execution of mouse, keyboard, and screenshot events as recorded in a test JSON file.
-    It manages event timing, window updates, and test completion signaling.
-
-    Attributes
-    ----------
-    counter : int
-        Counter for the number of events executed.
-    screenshot_counter : int
-        Counter for the number of screenshots taken.
-    start_time : int
-        The start time of the test execution in milliseconds.
-    last_event_time : int
-        The time of the last executed event in milliseconds.
-    save : bool
-        Flag indicating whether to save the executed events.
-    test : Test
-        The Test object containing the events to execute.
-    running : bool
-        Flag indicating whether the test is running.
-    quit_key : str
-        The key used to quit the test execution.
-    print_screen_key : str
-        The key used to take a screenshot.
-    keyboard_listener : keyboard.Listener or None
-        The keyboard listener for quit key detection.
-    mouse_controller : mouse.Controller
-        The mouse controller for simulating mouse events.
-    keyboard_controller : keyboard.Controller
-        The keyboard controller for simulating keyboard events.
-    event_window : EventWindow or None
-        The floating window that displays the executed events.
-    result_folder_path : str
-        Path to the result folder for saving test data.
-    test_completed : bool
-        Flag indicating whether the test has completed.
-    completion_queue : queue.Queue
-        Queue for signaling test completion.
-    current_test : Test
-        The Test object for the current execution session.
-
-    Methods
-    -------
-    on_press(key)
-        Handle keyboard press events during test execution.
-    peek_next_event(current_index)
-        Look at the next event without consuming it.
-    _create_event(event, time_total, time_diff)
-        Helper function to create an Event object for execution.
-    execute_mouse_event(event)
-        Execute a mouse event.
-    execute_keyboard_event(event)
-        Execute a keyboard event.
-    execute_mouse_scroll(event)
-        Execute a mouse scroll event.
-    run_test(event_window)
-        Execute all events in the test.
+    It manages event timing, window updates, and test completion signaling. The class provides methods for
+    executing different types of events and maintaining test state throughout execution.
+    
+    Attributes:
+        counter: Counter for the number of events executed
+        screenshot_counter: Counter for the number of screenshots taken
+        start_time: The start time of the test execution in milliseconds
+        last_event_time: The time of the last executed event in milliseconds
+        save: Flag indicating whether to save the executed events
+        test: The Test object containing the events to execute
+        running: Flag indicating whether the test is running
+        quit_key: The key used to quit the test execution
+        print_screen_key: The key used to take a screenshot
+        keyboard_listener: The keyboard listener for quit key detection
+        mouse_controller: The mouse controller for simulating mouse events
+        keyboard_controller: The keyboard controller for simulating keyboard events
+        event_window: The floating window that displays the executed events
+        result_folder_path: Path to the result folder for saving test data
+        test_completed: Flag indicating whether the test has completed
+        completion_queue: Queue for signaling test completion
+        current_test: The Test object for the current execution session
     """
     def __init__(self, test, result_folder_path):
-        """
-        Initialize the TestRunner with the given test and result folder path.
-
-        Parameters
-        ----------
-        test : Test
-            The Test object containing the events to execute.
-        result_folder_path : str
-            Path to the result folder for saving test data.
+        """Initialize the TestRunner with the given test and result folder path.
+        
+        Args:
+            test: The Test object containing the events to execute
+            result_folder_path: Path to the result folder for saving test data
         """
         self.counter = 0
         self.screenshot_counter = 0
@@ -161,18 +119,13 @@ class TestRunner:
         )
 
     def on_press(self, key):
-        """
-        Handle keyboard press events during test execution.
-
-        Parameters
-        ----------
-        key : Key
-            The key that was pressed.
-
-        Returns
-        -------
-        bool or None
-            False if the quit key is pressed, otherwise None.
+        """Handle keyboard press events during test execution.
+        
+        Args:
+            key: The key that was pressed
+            
+        Returns:
+            bool or None: False if the quit key is pressed, otherwise None
         """
         try:
             if key.char == self.quit_key:
@@ -204,40 +157,28 @@ class TestRunner:
                 pass
             
     def peek_next_event(self, current_index):
-        """
-        Look at the next event without consuming it.
-
-        Parameters
-        ----------
-        current_index : int
-            The current index in the event list.
-
-        Returns
-        -------
-        Event or None
-            The next event if available, otherwise None.
+        """Look at the next event without consuming it.
+        
+        Args:
+            current_index: The current index in the event list
+            
+        Returns:
+            Event or None: The next event if available, otherwise None
         """
         if current_index + 1 < len(self.test.events):
             return self.test.events[current_index + 1]
         return None
 
     def _create_event(self, event, time_total, time_diff):
-        """
-        Helper function to create an Event object for execution.
-
-        Parameters
-        ----------
-        event : Event
-            The event to base the new Event object on.
-        time_total : int
-            Total time since the start of execution.
-        time_diff : int
-            Time since the last event.
-
-        Returns
-        -------
-        Event
-            The created Event object.
+        """Helper function to create an Event object for execution.
+        
+        Args:
+            event: The event to base the new Event object on
+            time_total: Total time since the start of execution
+            time_diff: Time since the last event
+            
+        Returns:
+            Event: The created Event object
         """
         return Event(
             counter=self.counter,
@@ -273,13 +214,13 @@ class TestRunner:
         )
 
     def execute_mouse_event(self, event):
-        """
-        Execute a mouse event.
-
-        Parameters
-        ----------
-        event : Event
-            The mouse event to execute.
+        """Execute a mouse event.
+        
+        Args:
+            event: The mouse event to execute
+            
+        Raises:
+            Exception: For errors during mouse event execution (handled internally)
         """
         try:
             self.counter += 1
@@ -366,13 +307,10 @@ class TestRunner:
             print(f"Error executing mouse event: {e}")
 
     def execute_keyboard_event(self, event):
-        """
-        Execute a keyboard event.
-
-        Parameters
-        ----------
-        event : Event
-            The keyboard event to execute.
+        """Execute a keyboard event.
+        
+        Args:
+            event: The keyboard event to execute
         """
         self.counter += 1
         current_time = int(time.time() * 1000)
@@ -557,13 +495,13 @@ class TestRunner:
             self.last_event_time = current_time
         return
     def execute_mouse_scroll(self, event):
-        """
-        Execute a mouse scroll event.
-
-        Parameters
-        ----------
-        event : Event
-            The mouse scroll event to execute.
+        """Execute a mouse scroll event.
+        
+        Args:
+            event: The mouse scroll event to execute
+            
+        Raises:
+            Exception: For errors during scroll event execution (handled internally)
         """
         try:
             self.counter += 1
@@ -602,13 +540,10 @@ class TestRunner:
             print(f"Error executing mouse scroll event: {e}")
 
     def run_test(self, event_window):
-        """
-        Execute all events in the test.
-
-        Parameters
-        ----------
-        event_window : EventWindow
-            The floating window to display event updates.
+        """Execute all events in the test.
+        
+        Args:
+            event_window: The floating window to display event updates
         """
         self.event_window = event_window  # Store the event window reference
         # Start keyboard listener
@@ -654,23 +589,19 @@ class TestRunner:
             print("Test execution completed, sent completion signal")
 
 def main(test_full_name=None, callback=None, run_number=1, run_total=1):
-    """
-    Main entry point for running a test from a JSON file.
-
+    """Main entry point for running a test from a JSON file.
+    
     This function loads a test from a JSON file, creates the event window, and executes the test events.
     It supports an optional callback to be called upon test completion.
-
-    Parameters
-    ----------
-    test_full_name : str, optional
-        The full path to the test JSON file to run.
-    callback : callable, optional
-        A function to call when the test completes.
-
-    Returns
-    -------
-    bool
-        True if the test ran successfully, False otherwise.
+    
+    Args:
+        test_full_name: The full path to the test JSON file to run (default: None)
+        callback: A function to call when the test completes (default: None)
+        run_number: Current run number (default: 1)
+        run_total: Total number of runs (default: 1)
+        
+    Returns:
+        bool: True if the test ran successfully, False otherwise
     """
 
     

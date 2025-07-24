@@ -1,12 +1,29 @@
 """
 Document generation utilities for test results.
 
-This module provides functionality to generate Word (.docx) documents from JSON test data, including step tables and images.
+This module provides functionality to generate Word (.docx) documents from JSON test data,
+including step tables and images. It supports both ATP (Acceptance Test Plan) and ATR
+(Acceptance Test Report) document types.
 
-Functions
----------
-create_doc_from_json(json_path, pictures=True, Type="ATP", Regular_doc_path=True)
-    Generate a Word document from a JSON test result file, including step tables and images.
+The module includes functions for:
+- Loading document configuration from JSON files
+- Adding system information sections to documents
+- Adding environment information sections
+- Applying document formatting settings
+- Creating complete Word documents from test result JSON files
+
+Example:
+    To generate a document from a test result file:
+    
+    ```python
+    from src.Doc.create_Doc import create_doc_from_json
+    
+    # Generate ATP document
+    create_doc_from_json(["path/to/test.json"], Type="ATP")
+    
+    # Generate ATR document with images
+    create_doc_from_json(["path/to/test.json"], pictures=True, Type="ATR")
+    ```
 """
 
 import json
@@ -26,17 +43,22 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, project_root)
 
 def load_doc_config():
-    """
-    Load the document configuration from Doc_config.json.
+    """Load the document configuration from Doc_config.json.
     
     This function reads the configuration file that contains system information,
-    environment settings, and document formatting preferences.
+    environment settings, and document formatting preferences. It handles both
+    development and PyInstaller bundle environments.
     
     Returns:
         dict: The configuration data containing:
             - system_info: Software and hardware details
-            - environment: Test environment settings
+            - environment: Test environment settings  
             - document_settings: Formatting and styling preferences
+            
+    Note:
+        When running as a PyInstaller bundle, the config file is expected to be
+        in the same directory as the executable. In development mode, it's expected
+        to be in the same directory as this script.
     """
     
     if getattr(sys, 'frozen', False):
@@ -57,8 +79,7 @@ def load_doc_config():
         return {}
 
 def add_system_info_section(doc, config):
-    """
-    Add system information section to the document.
+    """Add system information section to the document.
     
     This function creates a detailed section about the system configuration,
     including both software and hardware information. It formats the information
@@ -102,8 +123,7 @@ def add_system_info_section(doc, config):
             doc.add_paragraph(f"\t{pc_info.get('comment_2', '')}")
 
 def add_environment_section(doc, config):
-    """
-    Add environment information section to the document.
+    """Add environment information section to the document.
     
     This function creates a section detailing the test environment configuration,
     including multiple parameter sets for the test environment.
@@ -128,8 +148,7 @@ def add_environment_section(doc, config):
         doc.add_paragraph(f"\tLocation: {param_info.get('location', '')}")
 
 def apply_document_settings(doc, config):
-    """
-    Apply document formatting settings from config.
+    """Apply document formatting settings from config.
     
     This function applies the document-wide formatting settings including headers,
     footers, fonts, and colors as specified in the configuration file.
@@ -180,27 +199,31 @@ def apply_document_settings(doc, config):
         style.font.size = Pt(fonts.get('size', {}).get(f'heading{i}', 14))
 
 def create_doc_from_json(json_path_list, pictures=True, Type="ATP", Regular_doc_path=True):
-    """
-    Generate a Word document from a JSON test result file.
+    """Generate a Word document from a JSON test result file.
 
-    This function loads test data from a JSON file and generates a Word (.docx) document summarizing the test,
-    including a summary table of steps and optionally embedding images for each step.
+    This function loads test data from a JSON file and generates a Word (.docx) document 
+    summarizing the test, including a summary table of steps and optionally embedding 
+    images for each step.
 
-    Parameters
-    ----------
-    json_path : str
-        Path to the JSON file containing test data.
-    pictures : bool, optional
-        Whether to include images in the document (default: True).
-    Type : str, optional
-        Document type, e.g., "ATP" or "ATR" (default: "ATP").
-    Regular_doc_path : bool, optional
-        Whether to use the regular document path naming (default: True).
+    Args:
+        json_path_list: List of paths to JSON files containing test data
+        pictures: Whether to include images in the document (default: True)
+        Type: Document type, e.g., "ATP" or "ATR" (default: "ATP")
+        Regular_doc_path: Whether to use the regular document path naming (default: True)
 
-    Returns
-    -------
-    None
-        The function saves the generated document to disk; it does not return a value.
+    Returns:
+        bool: True if document was created successfully, False otherwise
+        
+    Raises:
+        Exception: For errors during document creation (handled internally)
+        
+    Note:
+        When Regular_doc_path is False, the function creates a comprehensive document
+        with title page, system information, and environment sections. When True,
+        it creates a simpler document focused on the test results.
+        
+        The function automatically opens the generated document on supported platforms
+        when Regular_doc_path is False.
     """
     try:
         # Create new document
@@ -275,7 +298,11 @@ def create_doc_from_json(json_path_list, pictures=True, Type="ATP", Regular_doc_
                     row.cells[idx].width = width
 
             def set_table_borders(table):
-                """Add borders to the summary table."""
+                """Add borders to the summary table.
+                
+                Args:
+                    table: The table object to add borders to
+                """
                 tbl = table._tbl
                 tblPr = tbl.tblPr
                 borders = OxmlElement('w:tblBorders')
@@ -351,7 +378,11 @@ def create_doc_from_json(json_path_list, pictures=True, Type="ATP", Regular_doc_
                                 doc.add_paragraph(f"Could not add image: {pic_path} ({e})")
 
             def add_page_number(paragraph):
-                """Add a page number field to the given paragraph."""
+                """Add a page number field to the given paragraph.
+                
+                Args:
+                    paragraph: The paragraph object to add the page number to
+                """
                 run = paragraph.add_run()
                 fldChar1 = OxmlElement('w:fldChar')
                 fldChar1.set(qn('w:fldCharType'), 'begin')

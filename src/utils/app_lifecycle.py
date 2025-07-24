@@ -1,15 +1,28 @@
-"""
-Application lifecycle management functions.
+"""Application lifecycle management functions.
+
+This module provides functions for managing the application lifecycle, including
+restarting and bringing the control panel to the foreground.
 """
 
 import tkinter as tk
 
 def restart_control_panel():
-    """
-    Restart (or bring to front) the control panel application.
+    """Restart or bring to front the control panel application.
     
-    This function either brings an existing control panel to front or creates a new one
-    if none exists. It includes error handling for window management operations.
+    This function attempts to bring an existing control panel to the foreground.
+    If no instance exists or if bringing to front fails, it creates a new instance.
+    Includes comprehensive error handling for window management operations.
+    
+    Returns:
+        None
+        
+    Raises:
+        Exception: If there are critical errors in creating the control panel.
+        This is caught and logged internally.
+        
+    Note:
+        Uses a singleton pattern to ensure only one control panel instance exists.
+        Imports ControlPanel locally to avoid circular dependencies.
     """
     from src.gui.control_panel import ControlPanel  # Import here to avoid circular dependency
     

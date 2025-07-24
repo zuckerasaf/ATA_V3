@@ -1,18 +1,33 @@
+"""Comment dialog for entering and editing test step descriptions.
+
+This module provides a simple dialog interface for users to enter comments
+or descriptions for test steps during test execution or editing.
+"""
+
 import tkinter as tk
 from tkinter import ttk
 from src.utils.config import Config
 
 class CommentDialog:
-    """
-    A simple dialog for entering or editing a comment (step_desc).
-    Shows a text widget with a scrollbar and OK/Cancel buttons.
-    Usage:
-        dialog = CommentDialog(parent, initial_text="optional")
-        dialog.dialog.wait_window()  # Wait for user
-        result = dialog.result  # The entered text, or None if cancelled
+    """A simple dialog for entering or editing a comment (step_desc).
+    
+    This dialog provides a text widget with scrollbar and OK/Cancel buttons
+    for entering comments during test execution or editing. It uses configuration
+    settings for window size and position.
+    
+    Attributes:
+        config: Configuration instance for window settings
+        result: The entered text or None if cancelled
+        dialog: The Toplevel dialog window
+        text: The text widget for input
     """
     def __init__(self, parent=None, initial_text=""):
-
+        """Initialize the comment dialog.
+        
+        Args:
+            parent: Parent window for the dialog (default: None)
+            initial_text: Initial text to display in the dialog (default: "")
+        """
         self.config = Config()
 
         # Get comment panel configuration from config file
@@ -24,18 +39,12 @@ class CommentDialog:
         self.default_cs_x = cs_config.get('CSW_position', {}).get('CSW_x', 10)
         self.default_cs_y = cs_config.get('CSW_position', {}).get('CSW_y', 10)
 
-        
-
-
-
-
         self.result = None
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(" Comment")
         self.dialog.geometry(f"{self.default_cs_width}x{self.default_cs_height}+{self.default_cs_x}+{self.default_cs_y}")#self.dialog.geometry(f"{panel_config['width']}x{panel_config['height']}+{panel_config['position']['x']}+{panel_config['position']['y']}")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-
 
         ttk.Label(self.dialog, text="Enter Comment:").pack(anchor="w", pady=(0, 5))
 
@@ -61,9 +70,19 @@ class CommentDialog:
         self.text.focus_set()
 
     def on_ok(self):
+        """Handle OK button click.
+        
+        This method retrieves the text from the text widget, strips whitespace,
+        and stores it in the result attribute before destroying the dialog.
+        """
         self.result = self.text.get("1.0", "end").strip()
         self.dialog.destroy()
 
     def on_cancel(self):
+        """Handle Cancel button click or window close.
+        
+        This method sets the result to None and destroys the dialog,
+        indicating that the user cancelled the operation.
+        """
         self.result = None
         self.dialog.destroy()

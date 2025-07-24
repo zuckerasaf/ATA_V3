@@ -1,25 +1,14 @@
-"""
-Utility functions for process management.
+"""Utility functions for process management.
 
 This module provides utility functions for managing processes, including checking if an instance is already running,
 terminating running instances, cleaning up resources, and saving test data.
 
-Functions
----------
-cleanup(lock_file)
-    Remove the lock file upon program exit.
-terminate_running_instance(lock_file)
-    Terminate the running instance of the program.
-is_already_running(lock_file)
-    Check if another instance of the program is already running.
-register_cleanup(lock_file)
-    Register the cleanup function to run on exit.
-cleanup_and_restart(event_window, lock_file="cursor_listener.lock")
-    Clean up resources and restart the control panel.
-save_test(test, test_name=None, state="running", result_folder_path=None)
-    Save the test data to a file.
-close_existing_mouse_threads()
-    Close any existing mouse listener threads.
+The module handles:
+- Process lifecycle management with lock files
+- Graceful termination of running instances
+- Resource cleanup on program exit
+- Test data serialization and storage
+- Thread management for mouse listeners
 """
 
 import os
@@ -34,21 +23,16 @@ from src.Doc.create_Doc import create_doc_from_json
 
 
 def cleanup(lock_file):
-    """
-    Remove the lock file upon program exit.
+    """Remove the lock file upon program exit.
 
     This function is registered to run on program exit to ensure the lock file is removed,
     preventing issues with subsequent program starts.
 
-    Parameters
-    ----------
-    lock_file : str
-        Path to the lock file to remove.
+    Args:
+        lock_file: Path to the lock file to remove
 
-    Raises
-    ------
-    Exception
-        If an error occurs while removing the lock file.
+    Raises:
+        Exception: If an error occurs while removing the lock file (handled internally)
     """
     try:
         if os.path.exists(lock_file):
@@ -59,26 +43,19 @@ def cleanup(lock_file):
 
 
 def terminate_running_instance(lock_file):
-    """
-    Terminate the running instance of the program.
+    """Terminate the running instance of the program.
 
     This function reads the PID from the lock file and attempts to terminate the process.
     It first tries a graceful termination and waits for the process to end.
 
-    Parameters
-    ----------
-    lock_file : str
-        Path to the lock file containing the PID.
+    Args:
+        lock_file: Path to the lock file containing the PID
 
-    Returns
-    -------
-    bool
-        True if the process was successfully terminated, False otherwise.
+    Returns:
+        bool: True if the process was successfully terminated, False otherwise
 
-    Raises
-    ------
-    Exception
-        If an error occurs while terminating the process.
+    Raises:
+        Exception: If an error occurs while terminating the process (handled internally)
     """
     try:
         if os.path.exists(lock_file):
@@ -112,26 +89,19 @@ def terminate_running_instance(lock_file):
 
 
 def is_already_running(lock_file):
-    """
-    Check if another instance of the program is already running.
+    """Check if another instance of the program is already running.
 
     If another instance is found, this function attempts to terminate it.
     If the lock file still exists after termination, it indicates a failure to terminate the instance.
 
-    Parameters
-    ----------
-    lock_file : str
-        Path to the lock file to check.
+    Args:
+        lock_file: Path to the lock file to check
 
-    Returns
-    -------
-    bool
-        True if another instance is running and couldn't be terminated, False otherwise.
+    Returns:
+        bool: True if another instance is running and couldn't be terminated, False otherwise
 
-    Raises
-    ------
-    Exception
-        If an error occurs while checking if the program is running.
+    Raises:
+        Exception: If an error occurs while checking if the program is running (handled internally)
     """
     try:
         if os.path.exists(lock_file):
@@ -160,33 +130,29 @@ def is_already_running(lock_file):
 
 
 def register_cleanup(lock_file):
-    """
-    Register the cleanup function to run on exit.
+    """Register the cleanup function to run on exit.
 
     This function registers the cleanup function to be called when the program exits,
     ensuring the lock file is removed.
 
-    Parameters
-    ----------
-    lock_file : str
-        Path to the lock file to remove on exit.
+    Args:
+        lock_file: Path to the lock file to remove on exit
     """
     atexit.register(cleanup, lock_file)
 
 
 def cleanup_and_restart(event_window, lock_file="cursor_listener.lock"):
-    """
-    Clean up resources and restart the control panel.
+    """Clean up resources and restart the control panel.
 
     This function deletes the lock file, destroys the event window, and restarts the control panel.
     It ensures proper cleanup sequence and handles potential errors during the process.
 
-    Parameters
-    ----------
-    event_window : tk.Toplevel
-        The event window to destroy.
-    lock_file : str, optional
-        Path to the lock file to remove.
+    Args:
+        event_window: The event window to destroy
+        lock_file: Path to the lock file to remove (default: "cursor_listener.lock")
+
+    Raises:
+        Exception: For errors during cleanup (handled internally)
     """
     try:
         # Delete the lock file to ensure clean restart
@@ -220,32 +186,22 @@ def cleanup_and_restart(event_window, lock_file="cursor_listener.lock"):
 
 
 def save_test(test, test_name=None, state="running", result_folder_path=None):
-    """
-    Save the test data to a file.
+    """Save the test data to a file.
 
     This function saves the test data to a JSON file, either in the result directory or the test directory,
-    depending on the state of the test.
+    depending on the state of the test. It also generates documentation from the test data.
 
-    Parameters
-    ----------
-    test : Test
-        The Test object to save.
-    test_name : str, optional
-        Name of the test.
-    state : str, optional
-        State of the test ("running" or "recording").
-    result_folder_path : str, optional
-        Path to the result folder.
+    Args:
+        test: The Test object to save
+        test_name: Name of the test (optional)
+        state: State of the test ("running" or "recording") (default: "running")
+        result_folder_path: Path to the result folder (optional)
 
-    Returns
-    -------
-    str
-        Path to the saved file, or None if an error occurs.
+    Returns:
+        str or None: Path to the saved file, or None if an error occurs
 
-    Raises
-    ------
-    Exception
-        If an error occurs while saving the test data.
+    Raises:
+        Exception: If an error occurs while saving the test data (handled internally)
     """
     Doctype = "ATP"
     DocPictures=True
@@ -292,11 +248,14 @@ def save_test(test, test_name=None, state="running", result_folder_path=None):
 
 
 def close_existing_mouse_threads():
-    """
-    Close any existing mouse listener threads.
+    """Close any existing mouse listener threads.
 
     This function iterates through all threads and stops any thread named "MouseListener",
     ensuring no lingering threads remain active.
+    
+    Note:
+        This function is used to prevent multiple mouse listener threads from running
+        simultaneously, which could cause conflicts in event handling.
     """
     for thread in threading.enumerate():
         if thread.name == "MouseListener":

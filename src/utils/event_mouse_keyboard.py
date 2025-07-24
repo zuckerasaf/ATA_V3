@@ -1,10 +1,28 @@
-"""
-Event class for storing mouse and keyboard events.
+"""Event class for storing mouse and keyboard events.
+
+This module defines the Event class which represents individual mouse and keyboard
+events captured during test recording. Each event contains comprehensive information
+about the action, timing, position, and associated screenshots or templates.
 """
 
 from PIL import Image
 
 class Event:
+    """Represents a single mouse or keyboard event in the automation testing system.
+    
+    This class stores all information related to a user interaction event, including
+    timing, position, action details, priority, and associated images. It supports
+    serialization to/from dictionaries for storage and transmission.
+    
+    Attributes:
+        PRIORITY_HIGH (str): High priority constant
+        PRIORITY_MEDIUM (str): Medium priority constant (default)
+        PRIORITY_LOW (str): Low priority constant
+        
+    Note:
+        The Event class is designed to be comprehensive and capture all necessary
+        information for replaying user interactions during test execution.
+    """
     # Priority levels
     PRIORITY_HIGH = "high"
     PRIORITY_MEDIUM = "medium"
@@ -20,36 +38,42 @@ class Event:
                  pic_template_width: int = 1, pic_template_height: int = 1, pic_template_x: int = 1, pic_template_y: int = 1,
                  pic_rotation_start: int = 0, pic_rotation_end: int = 0, pic_rotation_state: bool = False,
                  pic_template_loc_x: int = 0, pic_template_loc_y: int = 0, pic_template_confidence: float = 0):
-        """
-        Initialize a new Event instance.
+        """Initialize a new Event instance.
         
         Args:
-            counter (int): Event counter
-            time (int): Time since last event in milliseconds
-            neto_time (int): Time since last event in milliseconds
-            position (tuple): Mouse position (x, y)
-            event_type (str): Type of event (e.g., "mouse_left", "keyboard")
-            action (str): Description of the action
-            neto_time (int): Time since last event in milliseconds
-            priority (str): Event priority level
-            step_on (str): Step number or identifier
-            time_from_last (int): Time from last event in milliseconds
-            time_in_screenshot_dialog (int): Time spent in screenshot dialog in milliseconds
-            step_desc (str): Description of what this step does
-            step_accep (str): Expected outcome of the step
-            step_resau (str): Actual result of the step
-            step_resau_num (int): Numeric result value
-            pic_path (str): Path to associated picture
-            screenshot_counter (int): Counter for screenshots
-            image_name (str): Name of the image
-            pic_width (int): Width of the picture in pixels
-            pic_height (int): Height of the picture in pixels
-            pic_x (int): X coordinate of the picture
-            pic_y (int): Y coordinate of the picture
-            pic_template_width (int): Width of the template picture in pixels
-            pic_template_height (int): Height of the template picture in pixels
-            pic_template_x (int): X coordinate of the template picture
-            pic_template_y (int): Y coordinate of the template picture
+            counter: Event counter/sequence number
+            time: Time since last event in milliseconds
+            position: Mouse position as (x, y) tuple
+            event_type: Type of event (e.g., "mouse_left", "keyboard")
+            action: Description of the action performed
+            neto_time: Net time since last event in milliseconds
+            priority: Event priority level (high/medium/low)
+            step_on: Step number or identifier
+            time_from_last: Time from last event in milliseconds
+            time_in_screenshot_dialog: Time spent in screenshot dialog in milliseconds
+            step_desc: Description of what this step does
+            step_accep: Expected outcome of the step
+            step_resau: Actual result of the step
+            step_resau_num: Numeric result value
+            pic_path: Path to associated screenshot image
+            screenshot_counter: Counter for screenshots
+            image_name: Name of the image file
+            pic_width: Width of the screenshot in pixels
+            pic_height: Height of the screenshot in pixels
+            pic_x: X coordinate of the screenshot region
+            pic_y: Y coordinate of the screenshot region
+            pic_template_path: Path to the template image
+            pic_template_name: Name of the template image
+            pic_template_width: Width of the template in pixels
+            pic_template_height: Height of the template in pixels
+            pic_template_x: X coordinate of the template region
+            pic_template_y: Y coordinate of the template region
+            pic_rotation_start: Starting rotation angle for image matching
+            pic_rotation_end: Ending rotation angle for image matching
+            pic_rotation_state: Whether rotation matching is enabled
+            pic_template_loc_x: X coordinate of template match location
+            pic_template_loc_y: Y coordinate of template match location
+            pic_template_confidence: Confidence score of template match (0.0-1.0)
         """
         self.counter = counter
         self.time = time
@@ -88,7 +112,11 @@ class Event:
 
 
     def __str__(self) -> str:
-        """String representation of the Event."""
+        """Get string representation of the Event.
+        
+        Returns:
+            str: Human-readable string representation of the event
+        """
         return f"Event(counter={self.counter}, time={self.time}, neto_time={self.neto_time}, position={self.position}, " \
                f"type='{self.event_type}', action='{self.action}', priority={self.priority}, " \
                f"step_on='{self.step_on}', time_from_last={self.time_from_last}, " \
@@ -107,11 +135,19 @@ class Event:
     
     
     def __repr__(self) -> str:
-        """Detailed string representation of the Event."""
+        """Get detailed string representation of the Event.
+        
+        Returns:
+            str: Detailed string representation for debugging
+        """
         return self.__str__()
     
     def to_dict(self) -> dict:
-        """Convert event to dictionary format."""
+        """Convert event to dictionary format for serialization.
+        
+        Returns:
+            dict: Dictionary representation of the event with all attributes
+        """
         return {
             'counter': self.counter,
             'time': self.time,
@@ -150,7 +186,17 @@ class Event:
     
     @classmethod
     def from_dict(cls, data: dict) -> 'Event':
-        """Create an Event instance from a dictionary."""
+        """Create an Event instance from a dictionary.
+        
+        Args:
+            data: Dictionary containing event data
+            
+        Returns:
+            Event: New Event instance created from the dictionary data
+            
+        Note:
+            This method handles missing keys gracefully by providing default values.
+        """
         return cls(
             counter=data['counter'],
             time=data['time'],
